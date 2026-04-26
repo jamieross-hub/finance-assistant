@@ -21,6 +21,12 @@ except ImportError:
     from finance_storage import get_finance_dir, save_json, load_json
     from profile_manager import update_profile, get_profile
 
+try:
+    from data_coach import get_unlock_nudge, format_nudge as _format_nudge
+    _coach_available = True
+except ImportError:
+    _coach_available = False
+
 
 STEPS = [
     "basics",       # name, country, currency
@@ -332,12 +338,32 @@ def get_step_prompt(step: str, locale: str = "de") -> str:
 
 # ── Value previews ────────────────────────────────────────────────────────────
 
+def _append_coach_nudge(base_msg: str, profile: dict) -> str:
+    """Append a one-line data-coach nudge if available and message is short enough."""
+    if not _coach_available:
+        return base_msg
+    if len(base_msg) > 300:
+        return base_msg
+    try:
+        nudge = get_unlock_nudge(profile)
+        if nudge:
+            return base_msg + f"\n\nNext: add {nudge['add']} and I can show you {nudge['unlocks'][0].lower()}."
+    except Exception:
+        pass
+    return base_msg
+
+
 def get_step_value_preview(step: str, data: dict) -> str:
     """
     Returns a short sentence showing what just became possible after a step completes.
     Called by the skill after complete_step() succeeds.
     """
     profile = get_profile() or {}
+    base = _step_value_preview_inner(step, data, profile)
+    return _append_coach_nudge(base, profile)
+
+
+def _step_value_preview_inner(step: str, data: dict, profile: dict) -> str:
     currency = profile.get("meta", {}).get("primary_currency", "EUR")
 
     if step == "basics":

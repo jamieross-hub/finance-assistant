@@ -113,8 +113,26 @@ def main() -> str:
     except Exception:
         pass  # Alerts must never crash the skill
 
+    # Data coach nudge (only when no other alerts to avoid noise)
+    try:
+        from data_coach import get_unlock_nudge, format_nudge
+        nudge = get_unlock_nudge(profile)
+        if nudge:
+            return profile_display + "\n\n" + format_nudge(nudge)
+    except Exception:
+        pass
+
     return profile_display
 
 
 if __name__ == "__main__":
-    print(main())
+    if "--dashboard" in sys.argv:
+        from workspace_builder import generate_html_dashboard
+        import pathlib
+        out = pathlib.Path.home() / ".finance" / "dashboard.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        _setup_db()
+        generate_html_dashboard(output_path=str(out))
+        print(str(out))
+    else:
+        print(main())

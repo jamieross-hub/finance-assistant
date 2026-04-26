@@ -400,10 +400,48 @@ def get_session_alerts(profile: Optional[dict] = None) -> list[dict]:
     except Exception:
         pass  # Cashflow alerts must never crash the session
 
+    all_alerts.extend(_data_coach_alerts(profile))
+
     # Sort: critical → warning → info, then by domain
     order = {u: i for i, u in enumerate(URGENCY_LEVELS)}
     all_alerts.sort(key=lambda a: (order.get(a["urgency"], 99), a["domain"]))
     return all_alerts
+
+
+def _data_coach_alerts(profile: dict) -> list[dict]:
+    """
+    Surface 1-2 insight unlock nudges as info alerts.
+    Only shown if user has less than 60% of insights available.
+    Suppressed once user has rich data (>=8 insights available).
+    """
+    try:
+        from data_coach import get_available_insights, get_locked_insights, get_unlock_nudge
+    except ImportError:
+        return []
+
+    try:
+        available = get_available_insights(profile)
+        if len(available) >= 8:
+            return []  # User has rich data — don't nag
+
+        locked = get_locked_insights(profile)
+        total = len(available) + len(locked)
+        if total > 0 and len(available) / total >= 0.6:
+            return []  # Already at 60%+ — no nudge needed
+
+        nudge = get_unlock_nudge(profile)
+        if not nudge:
+            return []
+
+        return [_alert(
+            "info",
+            "data_coach",
+            "Unlock more insights",
+            nudge["lead"],
+            nudge["how"],
+        )]
+    except Exception:
+        return []
 
 
 def format_alerts(alerts: list[dict]) -> str:

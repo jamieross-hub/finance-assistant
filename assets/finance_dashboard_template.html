@@ -3,162 +3,1896 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finance Dashboard</title>
+<title>Finance Assistant — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0f172a; --surface: #1e293b; --border: #334155;
-    --text: #e2e8f0; --muted: #94a3b8; --accent: #3b82f6;
-    --green: #22c55e; --red: #ef4444; --yellow: #eab308;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, 'SF Pro', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 24px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; max-width: 1400px; margin: 0 auto; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
-  .card h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
-  .big-number { font-size: 36px; font-weight: 700; }
-  .positive { color: var(--green); }
-  .negative { color: var(--red); }
-  .neutral { color: var(--text); }
-  .score-ring { width: 120px; height: 120px; position: relative; margin: 0 auto 16px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f1f5f9; color: #1e293b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.5; }
+
+  .demo-banner { background: linear-gradient(135deg, #7c3aed, #2563eb); text-align: center; padding: 8px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #fff; }
+
+  .header { padding: 20px 24px 16px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #ffffff; }
+  .header-left h1 { font-size: 18px; font-weight: 700; color: #0f172a; }
+  .header-left p { color: #64748b; font-size: 13px; margin-top: 2px; }
+  .health-score { display: flex; align-items: center; gap: 12px; }
+  .score-ring { width: 64px; height: 64px; position: relative; }
   .score-ring svg { transform: rotate(-90deg); }
-  .score-ring .value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: 700; }
-  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
-  .bar-row { display: flex; align-items: center; gap: 12px; }
-  .bar-label { width: 100px; font-size: 13px; color: var(--muted); text-align: right; }
-  .bar-track { flex: 1; height: 24px; background: var(--bg); border-radius: 4px; overflow: hidden; position: relative; }
-  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
-  .bar-value { position: absolute; right: 8px; top: 3px; font-size: 12px; color: var(--text); }
-  .goal-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-  .goal-row:last-child { border: none; }
-  .goal-name { font-weight: 500; }
-  .goal-bar { width: 100px; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
-  .goal-fill { height: 100%; background: var(--accent); border-radius: 4px; }
-  .insight-item { padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; gap: 10px; }
-  .insight-item:last-child { border: none; }
-  .insight-icon { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
-  .insight-icon.ready { background: var(--green); }
-  .insight-icon.action { background: var(--yellow); }
-  .insight-icon.info { background: var(--accent); }
-  .domain-scores { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .domain-score { text-align: center; padding: 12px; background: var(--bg); border-radius: 8px; }
-  .domain-score .score { font-size: 24px; font-weight: 700; }
-  .domain-score .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .header { text-align: center; margin-bottom: 32px; }
-  .header h1 { font-size: 24px; margin-bottom: 4px; }
-  .header .subtitle { color: var(--muted); font-size: 14px; }
-  .stat-row { display: flex; justify-content: space-between; padding: 6px 0; }
-  .stat-label { color: var(--muted); font-size: 14px; }
-  .stat-value { font-weight: 600; font-size: 14px; }
-  .actions { list-style: none; }
-  .actions li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
-  .actions li:before { content: "→ "; color: var(--accent); }
+  .score-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 17px; font-weight: 800; color: #059669; }
+  .score-label { font-size: 11px; color: #64748b; text-align: center; margin-top: 2px; letter-spacing: 0.04em; }
+
+  .grid { display: grid; gap: 16px; padding: 16px 24px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-2-1 { grid-template-columns: 3fr 2fr; }
+  .grid-1-2 { grid-template-columns: 1fr 2fr; }
+
+  .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .card-sm { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+  .metric-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .metric-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .metric-value { font-size: 24px; font-weight: 800; color: #0f172a; }
+  .metric-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+  .metric-delta { font-size: 12px; margin-top: 4px; font-weight: 600; }
+  .delta-up { color: #059669; }
+  .delta-down { color: #dc2626; }
+  .delta-warn { color: #d97706; }
+
+  .card-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; letter-spacing: 0.04em; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-yellow { background: #fef9c3; color: #a16207; }
+  .badge-red { background: #fee2e2; color: #dc2626; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-purple { background: #ede9fe; color: #7c3aed; }
+
+  .insight { padding: 8px 12px; border-radius: 8px; margin-bottom: 7px; display: flex; gap: 8px; align-items: flex-start; min-width: 0; }
+  .insight-warn { background: #fffbeb; border-left: 3px solid #f59e0b; }
+  .insight-good { background: #f0fdf4; border-left: 3px solid #22c55e; }
+  .insight-info { background: #eff6ff; border-left: 3px solid #3b82f6; }
+  .insight-icon { font-size: 16px; line-height: 1; }
+  .insight-text { font-size: 12px; color: #475569; line-height: 1.5; word-break: break-word; min-width: 0; }
+  .insight-text strong { color: #0f172a; }
+
+  .bench-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .bench-label { font-size: 12px; color: #64748b; width: 120px; flex-shrink: 0; }
+  .bench-bar-wrap { flex: 1; background: #e2e8f0; border-radius: 999px; height: 6px; position: relative; overflow: visible; }
+  .bench-bar { height: 6px; border-radius: 999px; position: relative; }
+  .bench-marker { position: absolute; top: -4px; width: 2px; height: 14px; background: #94a3b8; border-radius: 1px; }
+  .bench-val { font-size: 12px; font-weight: 700; width: 50px; text-align: right; flex-shrink: 0; }
+
+  .opp-item { padding: 10px 14px; border-radius: 8px; background: #f8fafc; border: 1px solid #bfdbfe; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .opp-left { flex: 1; }
+  .opp-title { font-size: 13px; color: #1e293b; font-weight: 600; }
+  .opp-detail { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .opp-saving { font-size: 16px; font-weight: 800; color: #059669; text-align: right; flex-shrink: 0; }
+  .opp-deadline { font-size: 10px; color: #94a3b8; text-align: right; }
+
+  .cf-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+  .cf-date { font-size: 11px; color: #94a3b8; width: 60px; flex-shrink: 0; }
+  .cf-desc { font-size: 12px; color: #475569; flex: 1; }
+  .cf-amount { font-size: 13px; font-weight: 700; text-align: right; }
+  .cf-bal { font-size: 11px; color: #94a3b8; text-align: right; width: 70px; flex-shrink: 0; }
+  .cf-warn { background: #fffbeb; border-radius: 6px; }
+
+  .progress-wrap { margin-bottom: 12px; }
+  .progress-header { display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-bottom: 5px; }
+  .progress-bar { background: #e2e8f0; border-radius: 999px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; }
+
+  .fire-stat { text-align: center; padding: 10px; }
+  .fire-stat-val { font-size: 20px; font-weight: 800; }
+  .fire-stat-lbl { font-size: 11px; color: #64748b; margin-top: 3px; }
+
+  canvas { max-width: 100%; }
+
+  /* ── CTA buttons on smart-moves cards ── */
+  .cta-btn { display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 11px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;letter-spacing:0.02em;transition:opacity 0.15s; }
+  .cta-btn:hover { opacity:0.8; }
+  .cta-green { background:#dcfce7;color:#15803d; }
+  .cta-blue  { background:#dbeafe;color:#1d4ed8; }
+  .cta-amber { background:#fef3c7;color:#92400e; }
+  .cta-done  { background:#f1f5f9;color:#94a3b8;cursor:default; }
+
+  /* ── What-if slider ── */
+  .slider-section { background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+  input[type=range] { -webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;background:#e2e8f0;outline:none;cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#7c3aed;border:2px solid #fff;box-shadow:0 1px 4px rgba(124,58,237,0.4); }
+
+  /* ── Alert drawer ── */
+  #alertDrawer { position:fixed;top:0;right:-360px;width:340px;height:100vh;background:#fff;border-left:1px solid #e2e8f0;box-shadow:-4px 0 24px rgba(0,0,0,0.08);z-index:1000;transition:right 0.3s ease;overflow-y:auto;padding:20px; }
+  #alertDrawer.open { right:0; }
+  #drawerOverlay { display:none;position:fixed;inset:0;background:rgba(15,23,42,0.2);z-index:999;backdrop-filter:blur(1px); }
+  #drawerOverlay.open { display:block; }
+  .alert-item { padding:12px 14px;border-radius:10px;margin-bottom:10px; }
+  .alert-critical { background:#fef2f2;border:1px solid #fecaca; }
+  .alert-warning  { background:#fffbeb;border:1px solid #fde68a; }
+  .alert-info     { background:#eff6ff;border:1px solid #bfdbfe; }
+  .alert-badge { font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:0.04em; }
+  .badge-critical { background:#fee2e2;color:#dc2626; }
+  .badge-warning  { background:#fef3c7;color:#92400e; }
+  .badge-info2    { background:#dbeafe;color:#1d4ed8; }
+  .alert-title { font-size:13px;font-weight:700;color:#0f172a;margin:6px 0 3px; }
+  .alert-detail { font-size:12px;color:#475569;line-height:1.5; }
+  .alert-action { font-size:11px;font-weight:700;color:#7c3aed;margin-top:6px;cursor:pointer; }
+
+
+  /* ── Spending heatmap ── */
+  .heatmap-wrap { overflow-x: auto; }
+  .heatmap-grid { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; gap: 3px; width: max-content; }
+  .hm-cell { width: 14px; height: 14px; border-radius: 3px; cursor: default; transition: transform 0.1s; flex-shrink: 0; }
+  .hm-cell:hover { transform: scale(1.5); z-index: 10; position: relative; }
+  .hm-tooltip { position: fixed; background: #1e293b; color: #f1f5f9; padding: 6px 10px; border-radius: 6px; font-size: 11px; pointer-events: none; z-index: 200; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+
+  /* ── Day-of-week ── */
+  .dow-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .dow-label { font-size: 12px; color: #64748b; width: 32px; flex-shrink: 0; }
+  .dow-bar-bg { flex: 1; background: #e2e8f0; border-radius: 999px; height: 10px; overflow: hidden; }
+  .dow-bar-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+  .dow-val { font-size: 12px; font-weight: 700; width: 42px; text-align: right; flex-shrink: 0; }
+
+  /* ── Scenario comparison ── */
+  .scenario-wrap { display: grid; grid-template-columns: 1fr 44px 1fr; gap: 0; align-items: start; }
+  .scenario-col { border-radius: 12px; padding: 16px 18px; }
+  .scenario-current { background: #f8fafc; border: 1px solid #e2e8f0; }
+  .scenario-optimized { background: #f0fdf4; border: 2px solid #34d399; }
+  .scenario-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.05); align-items: center; }
+  .scenario-row:last-child { border-bottom: none; }
+  .scenario-metric { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+  .scenario-val-curr { font-size: 15px; font-weight: 800; color: #334155; }
+  .scenario-val-opt  { font-size: 15px; font-weight: 800; color: #059669; }
+  .scenario-delta-pill { font-size: 10px; font-weight: 700; background: #dcfce7; color: #15803d; padding: 2px 7px; border-radius: 999px; display: inline-block; margin-top: 2px; }
+  .scenario-vs { display: flex; align-items: center; justify-content: center; height: 100%; }
+  .scenario-vs-badge { background: linear-gradient(135deg,#7c3aed,#2563eb); color: #fff; border-radius: 999px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; }
+  .toggle-btn { padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid; transition: all 0.15s; }
+  .toggle-on  { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  .toggle-off { background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; }
+
+  /* ── Export modal ── */
+  #exportModal { display:none;position:fixed;inset:0;z-index:2000;align-items:center;justify-content:center; }
+  #exportModal.open { display:flex; }
+  .modal-bg { position:absolute;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(2px); }
+  .modal-box { position:relative;background:#fff;border-radius:16px;padding:24px;width:520px;max-width:90vw;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15); }
+  .modal-title { font-size:16px;font-weight:800;color:#0f172a;margin-bottom:4px; }
+  .modal-sub { font-size:12px;color:#94a3b8;margin-bottom:16px; }
+  .modal-section { background:#f8fafc;border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:12px;color:#334155;line-height:1.7; }
+  .modal-section h4 { font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px; }
+  .modal-close { position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:50%;background:#f1f5f9;border:none;font-size:16px;cursor:pointer;color:#64748b;display:flex;align-items:center;justify-content:center; }
+  .modal-btn { padding:9px 20px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px; }
+  .modal-btn-sec { padding:9px 20px;background:#f1f5f9;color:#475569;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer; }
+
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+    .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 
+<!-- FINANCE_DATA_INJECT -->
+
+<div class="demo-banner">⚡ DEMO — Finance Assistant · Marcus B., Berlin · Data is illustrative</div>
+
+<!-- HEADER -->
 <div class="header">
-  <h1>Finance Dashboard</h1>
-  <p class="subtitle" id="date"></p>
+  <div class="header-left">
+    <h1>Good morning, Marcus 👋</h1>
+    <p>Berlin · Software Engineer · Steuerklasse 1 · Last sync: today</p>
+  </div>
+  <div style="display:flex;gap:24px;align-items:center;">
+    <div>
+      <div class="score-ring">
+        <svg viewBox="0 0 64 64" width="64" height="64">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="#e2e8f0" stroke-width="7"/>
+          <circle cx="32" cy="32" r="26" fill="none" stroke="#34d399" stroke-width="7"
+            stroke-dasharray="163.4" stroke-dashoffset="44" stroke-linecap="round"/>
+        </svg>
+        <div class="score-num">73</div>
+      </div>
+      <div class="score-label">HEALTH SCORE</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;">April 2026</div>
+      <div style="font-size:13px;color:#94a3b8;margin-top:4px;">26 days into month</div>
+      <button onclick="openAlerts()" style="margin-top:6px;padding:5px 11px;border-radius:6px;background:#fef3c7;border:1px solid #fde68a;font-size:12px;font-weight:700;color:#92400e;cursor:pointer;">⚠ 2 items need attention</button>
+    </div>
+    <button onclick="openExport()" style="margin-left:16px;padding:9px 16px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">↗ Share with Advisor</button>
+  </div>
 </div>
 
-<div class="grid">
+<!-- ALERT DRAWER -->
+<div id="drawerOverlay" onclick="closeAlerts()"></div>
+<div id="alertDrawer">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div style="font-size:15px;font-weight:800;color:#0f172a;">Action Queue</div>
+    <button onclick="closeAlerts()" style="border:none;background:#f1f5f9;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;color:#64748b;">✕ Close</button>
+  </div>
+  <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.06em;">Sorted by impact · 5 items</div>
 
-  <!-- Health Score -->
-  <div class="card">
-    <h2>Financial Health</h2>
-    <div class="score-ring">
-      <svg width="120" height="120" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="52" fill="none" stroke="#1e293b" stroke-width="8"/>
-        <circle cx="60" cy="60" r="52" fill="none" stroke="#3b82f6" stroke-width="8"
-          stroke-dasharray="327" stroke-dashoffset="82" stroke-linecap="round" id="health-ring"/>
-      </svg>
-      <div class="value" id="health-score">75%</div>
+  <div class="alert-item alert-critical">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="alert-badge badge-critical">🔴 Urgent</span>
+      <span style="font-size:12px;font-weight:700;color:#dc2626;">€480 at risk</span>
     </div>
-    <div class="domain-scores" id="domain-scores"></div>
+    <div class="alert-title">Riester deadline — 64 days</div>
+    <div class="alert-detail">You committed to this in March. DWS/Deka setup takes 30 min. Every month you wait reduces the annual benefit proportionally.</div>
+    <div class="alert-action" onclick="markDone(this,'alert-critical')">→ Open DWS website &nbsp;✓ Mark done</div>
   </div>
 
-  <!-- Net Worth -->
+  <div class="alert-item alert-warning">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="alert-badge badge-warning">⚠ This month</span>
+      <span style="font-size:12px;font-weight:700;color:#d97706;">−€75/mo bleeding</span>
+    </div>
+    <div class="alert-title">Food budget over 3 months running</div>
+    <div class="alert-detail">Averaging €380 vs €340 limit. At current rate that's €900/year lost. Fix: raise limit to €380 or cap dining out at €120.</div>
+    <div class="alert-action" onclick="markDone(this,'alert-warning')">→ Adjust budget limit &nbsp;✓ Mark done</div>
+  </div>
+
+  <div class="alert-item alert-warning">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="alert-badge badge-warning">⚠ Behind pace</span>
+      <span style="font-size:12px;font-weight:700;color:#d97706;">€150/mo gap</span>
+    </div>
+    <div class="alert-title">House deposit falling behind</div>
+    <div class="alert-detail">Need €380/month to hit €80k by Dec 2028. Saving only €230/month. Redirect dining savings to close this gap.</div>
+    <div class="alert-action" onclick="markDone(this,'alert-warning')">→ Update goal contribution &nbsp;✓ Mark done</div>
+  </div>
+
+  <div class="alert-item alert-info">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="alert-badge badge-info2">ℹ Quick win</span>
+      <span style="font-size:12px;font-weight:700;color:#1d4ed8;">+€125/yr</span>
+    </div>
+    <div class="alert-title">€3,200 sitting in 0% checking</div>
+    <div class="alert-detail">ECB rate is 3.9%. Moving excess cash to Trade Republic or DKB Tagesgeld takes 10 minutes.</div>
+    <div class="alert-action" onclick="markDone(this,'alert-info')">→ Open Tagesgeldkonto &nbsp;✓ Mark done</div>
+  </div>
+
+  <div class="alert-item alert-info">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="alert-badge badge-info2">ℹ Tax win</span>
+      <span style="font-size:12px;font-weight:700;color:#1d4ed8;">+€210/yr</span>
+    </div>
+    <div class="alert-title">Freistellungsauftrag not filed at Scalable</div>
+    <div class="alert-detail">€1,000 tax-free investment income allowance. Gains are currently being withheld at 26.375% automatically.</div>
+    <div class="alert-action" onclick="markDone(this,'alert-info')">→ File at Scalable Capital &nbsp;✓ Mark done</div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div id="exportModal">
+  <div class="modal-bg" onclick="closeExport()"></div>
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeExport()">✕</button>
+    <div class="modal-title">📋 Advisor Summary — Marcus B.</div>
+    <div class="modal-sub">April 2026 · Prepared by Finance Assistant · For professional review</div>
+
+    <div class="modal-section">
+      <h4>Financial Snapshot</h4>
+      Net Worth: <strong>€67,500</strong> (↑€4,200 YTD) · Savings Rate: <strong>22%</strong> (Top 25% DE) · Monthly surplus: <strong>€1,067</strong><br>
+      Income: €4,850/mo gross · Expenses: €3,783/mo · Debt: <strong>€0</strong>
+    </div>
+
+    <div class="modal-section">
+      <h4>Goals &amp; Progress</h4>
+      Emergency Fund: €12,000 / €15,000 (80%) — on pace ✓<br>
+      House Deposit: €5,500 / €80,000 (7%) — <strong style="color:#d97706;">behind by €150/month ⚠</strong><br>
+      FIRE Target: €900k by age 50 — currently 7.5% funded (€67k)
+    </div>
+
+    <div class="modal-section">
+      <h4>Key Risks to Review</h4>
+      1. Food/dining budget overrun — 3 months consecutive (+12%)<br>
+      2. Savings rate declining — 26% → 24% → 22% over 4 months<br>
+      3. 100% income from labor — no passive income streams yet<br>
+      4. FIRE success rate at 68% (age 50) — sequence risk exposure
+    </div>
+
+    <div class="modal-section">
+      <h4>Tax Optimization Opportunities (2026)</h4>
+      Riester: +€480 (not yet actioned, deadline Dec 31)<br>
+      Homeoffice Pauschale: +€480 (projected, logging in progress)<br>
+      Charitable donations: +€270 (unclaimed, €0 logged)
+    </div>
+
+    <div class="modal-section">
+      <h4>Questions for Advisor</h4>
+      • Is €800/month ETF (100% MSCI World) appropriate given FIRE timeline?<br>
+      • Should I start a Rürup/Basis-Rente alongside Riester?<br>
+      • What's the optimal Steuerklasse strategy if I freelance part-time?<br>
+      • At what net worth should I add a financial advisor on retainer?
+    </div>
+
+    <div style="margin-top:16px;">
+      <button class="modal-btn" onclick="copyAdvisorSummary()">📋 Copy to clipboard</button>
+      <button class="modal-btn-sec" onclick="closeExport()">Close</button>
+    </div>
+    <div id="copiedMsg" style="display:none;margin-top:8px;font-size:12px;color:#059669;font-weight:600;">✓ Copied to clipboard!</div>
+  </div>
+</div>
+
+<!-- KEY METRICS -->
+<div class="grid grid-4" style="padding-top:20px;">
+  <div class="metric-card">
+    <div class="metric-label">Net Worth</div>
+    <div class="metric-value">€67,500</div>
+    <div class="metric-delta delta-up">↑ €4,200 since January</div>
+    <div class="metric-sub">Assets €67,500 · No debt</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Savings Rate</div>
+    <div class="metric-value" style="color:#34d399;">22%</div>
+    <div class="metric-delta delta-up">↑ Top 25% in Germany</div>
+    <div class="metric-sub">Avg. German household: 11%</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Monthly Cash Flow</div>
+    <div class="metric-value">+€1,067</div>
+    <div class="metric-delta delta-warn">↓ Down €180 vs March</div>
+    <div class="metric-sub">Income €4,850 · Expenses €3,783</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">FIRE Progress</div>
+    <div class="metric-value" style="color:#a78bfa;">7.5%</div>
+    <div class="metric-delta" style="color:#a78bfa;">Target age 50 · 16 years</div>
+    <div class="metric-sub">€67k of €900k goal</div>
+  </div>
+</div>
+
+<!-- NET WORTH + INSIGHTS -->
+<div class="grid grid-2-1" style="align-items:stretch;">
+  <div class="card" style="display:flex;flex-direction:column;">
+    <div class="card-title">Net Worth Trend <span class="badge badge-green">+€4,200 YTD</span></div>
+    <canvas id="nwChart" height="130"></canvas>
+    <div style="margin-top:16px;border-top:1px solid #e2e8f0;padding-top:14px;">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Monthly snapshot — last 4 months</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="color:#475569;font-size:11px;">
+            <th style="text-align:left;padding:4px 0;font-weight:600;">Month</th>
+            <th style="text-align:right;padding:4px 6px;font-weight:600;">Income</th>
+            <th style="text-align:right;padding:4px 6px;font-weight:600;">Expenses</th>
+            <th style="text-align:right;padding:4px 6px;font-weight:600;">Saved</th>
+            <th style="text-align:right;padding:4px 0;font-weight:600;">Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-top:1px solid #e2e8f0;">
+            <td style="padding:6px 0;color:#94a3b8;">January</td>
+            <td style="text-align:right;padding:6px;color:#334155;">€4,850</td>
+            <td style="text-align:right;padding:6px;color:#334155;">€3,600</td>
+            <td style="text-align:right;padding:6px;color:#34d399;font-weight:700;">€1,250</td>
+            <td style="text-align:right;color:#34d399;font-weight:700;">26%</td>
+          </tr>
+          <tr style="border-top:1px solid #e2e8f0;">
+            <td style="padding:6px 0;color:#94a3b8;">February</td>
+            <td style="text-align:right;padding:6px;color:#334155;">€4,850</td>
+            <td style="text-align:right;padding:6px;color:#334155;">€3,686</td>
+            <td style="text-align:right;padding:6px;color:#34d399;font-weight:700;">€1,164</td>
+            <td style="text-align:right;color:#34d399;font-weight:700;">24%</td>
+          </tr>
+          <tr style="border-top:1px solid #e2e8f0;">
+            <td style="padding:6px 0;color:#94a3b8;">March</td>
+            <td style="text-align:right;padding:6px;color:#334155;">€4,850</td>
+            <td style="text-align:right;padding:6px;color:#334155;">€3,783</td>
+            <td style="text-align:right;padding:6px;color:#fbbf24;font-weight:700;">€1,067</td>
+            <td style="text-align:right;color:#fbbf24;font-weight:700;">22%</td>
+          </tr>
+          <tr style="border-top:1px solid #e2e8f0;background:#f0f9ff;border-radius:4px;">
+            <td style="padding:6px 0;color:#60a5fa;font-weight:600;">April (proj.)</td>
+            <td style="text-align:right;padding:6px;color:#334155;">€4,850</td>
+            <td style="text-align:right;padding:6px;color:#334155;">€3,900</td>
+            <td style="text-align:right;padding:6px;color:#fbbf24;font-weight:700;">€950</td>
+            <td style="text-align:right;color:#fbbf24;font-weight:700;">20%</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <div style="flex:1;background:#f0f9ff;border-radius:8px;padding:8px 10px;text-align:center;">
+          <div style="font-size:11px;color:#64748b;">Avg income/mo</div>
+          <div style="font-size:14px;font-weight:700;color:#334155;">€4,850</div>
+        </div>
+        <div style="flex:1;background:#f0f9ff;border-radius:8px;padding:8px 10px;text-align:center;">
+          <div style="font-size:11px;color:#64748b;">Avg saved/mo</div>
+          <div style="font-size:14px;font-weight:700;color:#34d399;">€1,108</div>
+        </div>
+        <div style="flex:1;background:#fffbeb;border-radius:8px;padding:8px 10px;text-align:center;">
+          <div style="font-size:11px;color:#64748b;">Trend</div>
+          <div style="font-size:14px;font-weight:700;color:#fbbf24;">↓ −6%/mo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="overflow:hidden;">
+    <div class="card-title">What's on my radar</div>
+
+    <div class="insight insight-warn">
+      <div class="insight-icon">🍕</div>
+      <div class="insight-text"><strong>Food spending up 12% three months running</strong> — averaging €380/month lately vs €338 before. Looks like a habit, not a blip. Worth raising the limit or talking about what's driving it.</div>
+    </div>
+    <div class="insight insight-good">
+      <div class="insight-icon">💪</div>
+      <div class="insight-text"><strong>No debt — that's genuinely rare at 34.</strong> Your entire surplus goes straight to goals. Your DTI is 0.00 — as healthy as it gets.</div>
+    </div>
+    <div class="insight insight-info">
+      <div class="insight-icon">📉</div>
+      <div class="insight-text"><strong>Savings rate slipped 3 months in a row</strong> — 26% → 24% → 22%. Not alarming yet, but worth understanding what changed.</div>
+    </div>
+    <div class="insight insight-warn">
+      <div class="insight-icon">🎯</div>
+      <div class="insight-text"><strong>House deposit goal is falling behind pace</strong> — saving ~€230/month but need €380/month to hit €80k by Dec 2028. That's a €150/month gap.</div>
+    </div>
+    <div class="insight insight-info">
+      <div class="insight-icon">🔗</div>
+      <div class="insight-text"><strong>Dining out and food overspend are moving together</strong> — Pearson r = 0.87. The months you eat out more, your total food bill goes over by an average of €62. It's not a coincidence.</div>
+    </div>
+    <div class="insight insight-good">
+      <div class="insight-icon">📈</div>
+      <div class="insight-text"><strong>Net worth velocity is accelerating.</strong> You added €1,050/month on average YTD. At that pace you'll cross €80k by October — 2 months ahead of your plan.</div>
+    </div>
+    <div class="insight insight-warn">
+      <div class="insight-icon">🎄</div>
+      <div class="insight-text"><strong>December historically runs 48% above your average spend.</strong> That's a ~€1,800 month. You have €0 set aside for it. Worth building a buffer now — even €150/month from May covers it.</div>
+    </div>
+  </div>
+</div>
+
+<!-- BUDGET + SPENDING TRENDS -->
+<div class="grid grid-1-2">
   <div class="card">
-    <h2>Net Worth</h2>
-    <div class="big-number neutral" id="net-worth">€0</div>
-    <div style="margin-top: 16px">
-      <div class="stat-row"><span class="stat-label">Assets</span><span class="stat-value positive" id="assets">€0</span></div>
-      <div class="stat-row"><span class="stat-label">Liabilities</span><span class="stat-value negative" id="liabilities">€0</span></div>
-      <div class="stat-row"><span class="stat-label">Trend</span><span class="stat-value" id="trend">—</span></div>
+    <div class="card-title">April Budget <span class="badge badge-yellow">2 over</span></div>
+    <canvas id="budgetChart" height="180"></canvas>
+    <div style="margin-top:14px;">
+      <div class="progress-wrap">
+        <div class="progress-header"><span>Food</span><span style="color:#f87171;">€380 / €340 ⚠</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:112%;background:#f87171;"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-header"><span>Transport</span><span>€118 / €150</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:79%;background:#34d399;"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-header"><span>Eating out</span><span style="color:#f87171;">€195 / €120 ⚠</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:100%;background:#f87171;"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-header"><span>Subscriptions</span><span>€62 / €80</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:78%;background:#34d399;"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-header"><span>Entertainment</span><span>€88 / €100</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:88%;background:#60a5fa;"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Spending Trends — 6 months</div>
+    <canvas id="spendChart" height="110"></canvas>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">TREND: Food</div>
+        <div style="font-size:13px;color:#f87171;font-weight:700;">↑ +12% / month</div>
+        <div style="font-size:11px;color:#64748b;">Accelerating</div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">TREND: Transport</div>
+        <div style="font-size:13px;color:#34d399;font-weight:700;">↓ −4% / month</div>
+        <div style="font-size:11px;color:#64748b;">Improving</div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">ANOMALY: March</div>
+        <div style="font-size:13px;color:#fbbf24;font-weight:700;">+€340 spike</div>
+        <div style="font-size:11px;color:#64748b;">2.1σ above avg</div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">SEASONAL: Dec</div>
+        <div style="font-size:13px;color:#a78bfa;font-weight:700;">+48% vs avg</div>
+        <div style="font-size:11px;color:#64748b;">Historically high</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SPENDING HEATMAP + DAY-OF-WEEK -->
+<div class="grid" style="grid-template-columns:3fr 2fr;padding-bottom:0;">
+
+  <div class="card">
+    <div class="card-title" style="margin-bottom:6px;">
+      Spending Heatmap — last 16 weeks
+      <span style="font-size:11px;color:#94a3b8;font-weight:400;text-transform:none;letter-spacing:0;">each cell = one day</span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:10px;">
+      <span style="font-size:11px;color:#94a3b8;">less</span>
+      <div style="width:12px;height:12px;border-radius:2px;background:#f1f5f9;"></div>
+      <div style="width:12px;height:12px;border-radius:2px;background:#bbf7d0;"></div>
+      <div style="width:12px;height:12px;border-radius:2px;background:#4ade80;"></div>
+      <div style="width:12px;height:12px;border-radius:2px;background:#fbbf24;"></div>
+      <div style="width:12px;height:12px;border-radius:2px;background:#f97316;"></div>
+      <div style="width:12px;height:12px;border-radius:2px;background:#ef4444;"></div>
+      <span style="font-size:11px;color:#94a3b8;">more</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div style="display:flex;flex-direction:column;gap:3px;padding-top:2px;">
+        <div style="font-size:10px;color:#94a3b8;height:14px;line-height:14px;">M</div>
+        <div style="font-size:10px;color:#94a3b8;height:14px;line-height:14px;">T</div>
+        <div style="font-size:10px;color:#94a3b8;height:14px;line-height:14px;">W</div>
+        <div style="font-size:10px;color:#94a3b8;height:14px;line-height:14px;">T</div>
+        <div style="font-size:10px;color:#94a3b8;height:14px;line-height:14px;">F</div>
+        <div style="font-size:10px;color:#94a3b8;height:14px;line-height:14px;">S</div>
+        <div style="font-size:10px;color:#94a3b8;height:14px;line-height:14px;">S</div>
+      </div>
+      <div class="heatmap-wrap" style="flex:1;">
+        <div id="heatmapGrid" class="heatmap-grid"></div>
+      </div>
+    </div>
+    <div id="hmMonthLabels" style="display:flex;gap:0;margin-top:6px;margin-left:20px;font-size:10px;color:#94a3b8;"></div>
+    <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+      <div style="background:#fff8f1;border-radius:8px;padding:8px 10px;border:1px solid #fed7aa;">
+        <div style="font-size:10px;color:#64748b;">Highest spend day</div>
+        <div style="font-size:14px;font-weight:800;color:#f97316;">Saturday</div>
+        <div style="font-size:11px;color:#94a3b8;">avg €185/day</div>
+      </div>
+      <div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;border:1px solid #bbf7d0;">
+        <div style="font-size:10px;color:#64748b;">Lowest spend day</div>
+        <div style="font-size:14px;font-weight:800;color:#34d399;">Tuesday</div>
+        <div style="font-size:11px;color:#94a3b8;">avg €42/day</div>
+      </div>
+      <div style="background:#fffbeb;border-radius:8px;padding:8px 10px;border:1px solid #fde68a;">
+        <div style="font-size:10px;color:#64748b;">Weekend premium</div>
+        <div style="font-size:14px;font-weight:800;color:#f59e0b;">+€183/day</div>
+        <div style="font-size:11px;color:#94a3b8;">vs weekday avg</div>
+      </div>
     </div>
   </div>
 
-  <!-- Budget -->
   <div class="card">
-    <h2>Budget This Month</h2>
-    <div class="bar-chart" id="budget-bars"></div>
-  </div>
-
-  <!-- Goals -->
-  <div class="card">
-    <h2>Savings Goals</h2>
-    <div id="goals-list"></div>
-  </div>
-
-  <!-- Portfolio -->
-  <div class="card">
-    <h2>Investments</h2>
-    <div class="big-number neutral" id="portfolio-value">€0</div>
-    <div style="margin-top: 8px">
-      <span class="stat-value" id="portfolio-return">+0.0%</span>
-      <span class="stat-label">total return</span>
+    <div class="card-title" style="margin-bottom:16px;">Day-of-Week Spending</div>
+    <div id="dowChart"></div>
+    <div style="margin-top:14px;padding:10px 12px;background:#fffbeb;border-radius:8px;border-left:3px solid #f59e0b;">
+      <div style="font-size:12px;font-weight:700;color:#92400e;">Weekend effect</div>
+      <div style="font-size:12px;color:#475569;margin-top:3px;">You spend <strong>2.4× more on Sat/Sun</strong> than Mon–Thu. Friday is the inflection point — eating out triggers the weekend pattern.</div>
     </div>
-    <div class="bar-chart" style="margin-top: 16px" id="allocation-bars"></div>
+    <div style="margin-top:10px;padding:10px 12px;background:#eff6ff;border-radius:8px;border-left:3px solid #3b82f6;">
+      <div style="font-size:12px;font-weight:700;color:#1d4ed8;">What this costs you</div>
+      <div style="font-size:12px;color:#475569;margin-top:3px;">If weekend spend matched weekday levels: <strong style="color:#059669;">+€190/month saved</strong> — that alone closes your house deposit gap.</div>
+    </div>
   </div>
 
-  <!-- Insights & Actions -->
+</div>
+
+<!-- FIRE MONTE CARLO + TAX -->
+<div class="grid grid-2">
   <div class="card">
-    <h2>Top Actions</h2>
-    <ul class="actions" id="actions-list"></ul>
+    <div class="card-title">FIRE Simulation — 10,000 runs <span class="badge badge-purple">68% success</span></div>
+    <canvas id="fireChart" height="110"></canvas>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <div class="fire-stat" style="flex:1;background:#f0f9ff;border-radius:8px;">
+        <div class="fire-stat-val" style="color:#f87171;">68%</div>
+        <div class="fire-stat-lbl">Retire at 50</div>
+      </div>
+      <div class="fire-stat" style="flex:1;background:#f0f9ff;border-radius:8px;">
+        <div class="fire-stat-val" style="color:#fbbf24;">84%</div>
+        <div class="fire-stat-lbl">Retire at 52</div>
+      </div>
+      <div class="fire-stat" style="flex:1;background:#f0f9ff;border-radius:8px;">
+        <div class="fire-stat-val" style="color:#34d399;">94%</div>
+        <div class="fire-stat-lbl">Retire at 55</div>
+      </div>
+      <div class="fire-stat" style="flex:1;background:#f0f9ff;border-radius:8px;">
+        <div class="fire-stat-val" style="color:#60a5fa;">+€200/mo</div>
+        <div class="fire-stat-lbl">Raises to 81%</div>
+      </div>
+    </div>
+    <div class="insight insight-info" style="margin-top:12px;">
+      <div class="insight-icon">📊</div>
+      <div class="insight-text">Median outcome: <strong>€940k at age 50</strong> (p50). Worst 10%: €420k — a bad first decade would hurt. Sequence risk is your main exposure here.</div>
+    </div>
   </div>
 
+  <div class="card">
+    <div class="card-title">Tax Optimizer 2026 <span class="badge badge-blue">+€1,230 possible</span></div>
+    <div style="font-size:12px;color:#94a3b8;margin-bottom:12px;">4 months elapsed · Projected refund at current pace: <strong style="color:#34d399;">~€380</strong></div>
+
+    <div class="opp-item">
+      <div class="opp-left">
+        <div class="opp-title">Max Riester contribution</div>
+        <div class="opp-detail">Currently €0 of €2,100 annual max · Needs action before Dec 31</div>
+      </div>
+      <div>
+        <div class="opp-saving">+€480</div>
+        <div class="opp-deadline">Dec 31 · Low effort</div>
+      </div>
+    </div>
+    <div class="opp-item">
+      <div class="opp-left">
+        <div class="opp-title">Homeoffice — 130 days remaining</div>
+        <div class="opp-detail">80 days logged of 210 cap · €6/day · Projected to claim 180 days</div>
+      </div>
+      <div>
+        <div class="opp-saving">+€480</div>
+        <div class="opp-deadline">Log daily · High confidence</div>
+      </div>
+    </div>
+    <div class="opp-item">
+      <div class="opp-left">
+        <div class="opp-title">Charitable donations</div>
+        <div class="opp-detail">Up to €17,000 deductible (20% of income) · €0 logged so far</div>
+      </div>
+      <div>
+        <div class="opp-saving">+€270</div>
+        <div class="opp-deadline">Dec 31 · Zuwendungsbestätigung needed</div>
+      </div>
+    </div>
+    <div style="padding:10px 14px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;text-align:center;margin-top:4px;">
+      <span style="color:#34d399;font-weight:700;font-size:15px;">Total potential: €1,230 extra refund</span>
+      <span style="color:#64748b;font-size:12px;display:block;margin-top:2px;">On top of the projected €380 at current pace</span>
+    </div>
+  </div>
+</div>
+
+<!-- WHAT-IF SLIDER -->
+<div class="grid" style="grid-template-columns:1fr;padding-bottom:0;">
+  <div class="slider-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div>
+        <div class="card-title" style="margin-bottom:2px;">What-If Explorer <span class="badge badge-purple">Live</span></div>
+        <div style="font-size:12px;color:#94a3b8;">Drag the slider — numbers update in real time</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;">Monthly savings</div>
+        <div id="sliderSavingsAmt" style="font-size:24px;font-weight:800;color:#7c3aed;">€1,067</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <span style="font-size:11px;color:#94a3b8;width:32px;">10%</span>
+      <input type="range" id="savingsSlider" min="10" max="40" value="22" oninput="updateWhatIf(this.value)">
+      <span style="font-size:11px;color:#94a3b8;width:32px;text-align:right;">40%</span>
+      <span style="font-size:16px;font-weight:800;color:#7c3aed;width:44px;text-align:center;" id="sliderPct">22%</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+      <div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">Year-end net worth</div>
+        <div id="wiNetWorth" style="font-size:20px;font-weight:800;color:#0f172a;">€79,200</div>
+        <div id="wiNetWorthDelta" style="font-size:11px;color:#34d399;margin-top:2px;">current pace</div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">FIRE date</div>
+        <div id="wiFire" style="font-size:20px;font-weight:800;color:#a78bfa;">2042</div>
+        <div id="wiFireAge" style="font-size:11px;color:#94a3b8;margin-top:2px;">age 50</div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">FIRE success rate</div>
+        <div id="wiSuccess" style="font-size:20px;font-weight:800;color:#34d399;">68%</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">Monte Carlo p50</div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;">vs current path</div>
+        <div id="wiDelta" style="font-size:20px;font-weight:800;color:#475569;">—</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">net worth difference</div>
+      </div>
+    </div>
+    <div id="wiInsight" style="margin-top:12px;padding:10px 14px;background:#eff6ff;border-radius:8px;border-left:3px solid #7c3aed;font-size:12px;color:#1e293b;line-height:1.5;"></div>
+  </div>
+</div>
+
+<!-- SCENARIO COMPARISON -->
+<div class="grid" style="grid-template-columns:1fr;padding-bottom:0;">
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div class="card-title" style="margin-bottom:2px;">Scenario Comparison <span class="badge badge-purple">Interactive</span></div>
+        <div style="font-size:12px;color:#94a3b8;">Toggle optimizations on the right — see the compounded impact across all metrics</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="scenarioToggles">
+        <button class="toggle-btn toggle-on" onclick="toggleScenario('dining',this)">🍕 Cap dining (−€75/mo)</button>
+        <button class="toggle-btn toggle-on" onclick="toggleScenario('riester',this)">🏦 Riester (+€480/yr)</button>
+        <button class="toggle-btn toggle-on" onclick="toggleScenario('etf',this)">📈 Align ETF/payday</button>
+      </div>
+    </div>
+
+    <div class="scenario-wrap">
+      <!-- Current -->
+      <div class="scenario-col scenario-current">
+        <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">📍 Current path</div>
+
+        <div class="scenario-row">
+          <div>
+            <div class="scenario-metric">Year-end net worth</div>
+            <div class="scenario-val-curr">€79,200</div>
+          </div>
+          <div>
+            <div class="scenario-metric">Savings rate</div>
+            <div class="scenario-val-curr">22%</div>
+          </div>
+        </div>
+        <div class="scenario-row">
+          <div>
+            <div class="scenario-metric">FIRE date</div>
+            <div class="scenario-val-curr">2042</div>
+            <div style="font-size:11px;color:#94a3b8;">age 50 · 68% success</div>
+          </div>
+          <div>
+            <div class="scenario-metric">Monthly investment</div>
+            <div class="scenario-val-curr">€800</div>
+          </div>
+        </div>
+        <div class="scenario-row">
+          <div>
+            <div class="scenario-metric">House deposit ready</div>
+            <div class="scenario-val-curr">Oct 2030</div>
+          </div>
+          <div>
+            <div class="scenario-metric">Tax refund 2026</div>
+            <div class="scenario-val-curr">~€380</div>
+          </div>
+        </div>
+        <div class="scenario-row">
+          <div>
+            <div class="scenario-metric">Monthly dining</div>
+            <div class="scenario-val-curr" style="color:#f87171;">€195</div>
+          </div>
+          <div>
+            <div class="scenario-metric">Net worth in 5 yrs</div>
+            <div class="scenario-val-curr">€143k</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VS divider -->
+      <div class="scenario-vs">
+        <div class="scenario-vs-badge">VS</div>
+      </div>
+
+      <!-- Optimized -->
+      <div class="scenario-col scenario-optimized">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.06em;">🚀 Optimized path</div>
+          <div id="totalGain" style="font-size:12px;font-weight:800;color:#059669;background:#dcfce7;padding:3px 10px;border-radius:999px;"></div>
+        </div>
+
+        <div class="scenario-row">
+          <div>
+            <div class="scenario-metric">Year-end net worth</div>
+            <div id="sc-nw" class="scenario-val-opt">—</div>
+            <span id="sc-nw-d" class="scenario-delta-pill"></span>
+          </div>
+          <div>
+            <div class="scenario-metric">Savings rate</div>
+            <div id="sc-sr" class="scenario-val-opt">—</div>
+            <span id="sc-sr-d" class="scenario-delta-pill"></span>
+          </div>
+        </div>
+        <div class="scenario-row">
+          <div>
+            <div class="scenario-metric">FIRE date</div>
+            <div id="sc-fire" class="scenario-val-opt">—</div>
+            <div id="sc-fire-sub" style="font-size:11px;color:#059669;"></div>
+          </div>
+          <div>
+            <div class="scenario-metric">Monthly investment</div>
+            <div id="sc-inv" class="scenario-val-opt">—</div>
+            <span id="sc-inv-d" class="scenario-delta-pill"></span>
+          </div>
+        </div>
+        <div class="scenario-row">
+          <div>
+            <div class="scenario-metric">House deposit ready</div>
+            <div id="sc-house" class="scenario-val-opt">—</div>
+            <span id="sc-house-d" class="scenario-delta-pill"></span>
+          </div>
+          <div>
+            <div class="scenario-metric">Tax refund 2026</div>
+            <div id="sc-tax" class="scenario-val-opt">—</div>
+            <span id="sc-tax-d" class="scenario-delta-pill"></span>
+          </div>
+        </div>
+        <div class="scenario-row">
+          <div>
+            <div class="scenario-metric">Monthly dining</div>
+            <div id="sc-dining" class="scenario-val-opt">—</div>
+          </div>
+          <div>
+            <div class="scenario-metric">Net worth in 5 yrs</div>
+            <div id="sc-5yr" class="scenario-val-opt">—</div>
+            <span id="sc-5yr-d" class="scenario-delta-pill"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="scenarioInsight" style="margin-top:14px;padding:12px 14px;border-radius:8px;font-size:12px;line-height:1.6;"></div>
+  </div>
+</div>
+
+<!-- DEEP INSIGHTS ROW -->
+<div class="grid grid-3">
+
+  <!-- Income & wealth trajectory -->
+  <div class="card">
+    <div class="card-title">Wealth Trajectory <span class="badge badge-green">On track</span></div>
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;">PROJECTED END OF 2026</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px;">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:#34d399;">€79,200</div>
+          <div style="font-size:12px;color:#64748b;">if current pace holds</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:700;color:#a78bfa;">+€11,700</div>
+          <div style="font-size:11px;color:#64748b;">vs Jan 2026</div>
+        </div>
+      </div>
+      <div style="background:#f1f5f9;border-radius:8px;overflow:hidden;height:6px;margin-bottom:6px;">
+        <div style="height:100%;width:57%;background:linear-gradient(90deg,#34d399,#a78bfa);border-radius:8px;"></div>
+      </div>
+      <div style="font-size:11px;color:#64748b;">57% of year elapsed · €67,500 now → €79,200 target</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px;">
+        <div style="font-size:11px;color:#64748b;">If savings → 25%</div>
+        <div style="font-size:15px;font-weight:800;color:#60a5fa;">€82,400</div>
+        <div style="font-size:11px;color:#64748b;">+€3,200 upside</div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px;">
+        <div style="font-size:11px;color:#64748b;">If food drift continues</div>
+        <div style="font-size:15px;font-weight:800;color:#f87171;">€76,900</div>
+        <div style="font-size:11px;color:#64748b;">−€2,300 downside</div>
+      </div>
+    </div>
+    <div class="insight insight-info" style="margin-top:12px;">
+      <div class="insight-icon">💡</div>
+      <div class="insight-text">A €200/month raise in ETF contributions would add ~€4.6k to net worth by year-end through compounding.</div>
+    </div>
+  </div>
+
+  <!-- Spending pattern deep dive -->
+  <div class="card">
+    <div class="card-title">Spending Patterns</div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Correlations detected</div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#1e293b;">Dining out ↔ Food overrun</span>
+          <span style="font-size:13px;font-weight:800;color:#f87171;">r = 0.87</span>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-top:3px;">Strong — €1 more dining out → €0.83 extra food cost</div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#1e293b;">Entertainment ↔ Transport</span>
+          <span style="font-size:13px;font-weight:800;color:#fbbf24;">r = 0.61</span>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-top:3px;">Moderate — active weekends also raise Uber/taxi use</div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#1e293b;">Subscriptions ↔ Savings</span>
+          <span style="font-size:13px;font-weight:800;color:#34d399;">r = −0.12</span>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-top:3px;">Weak — subscriptions not materially hurting savings</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Month-over-month anomalies</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+      <div style="background:#fffbeb;border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:11px;color:#fbbf24;font-weight:700;">Mar spike</div>
+        <div style="font-size:15px;font-weight:800;color:#fbbf24;">+€340</div>
+        <div style="font-size:10px;color:#64748b;">2.1σ food</div>
+      </div>
+      <div style="background:#f0fdf4;border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:11px;color:#34d399;font-weight:700;">Feb dip</div>
+        <div style="font-size:15px;font-weight:800;color:#34d399;">−€210</div>
+        <div style="font-size:10px;color:#64748b;">travel pause</div>
+      </div>
+      <div style="background:#eff6ff;border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:11px;color:#60a5fa;font-weight:700;">Nov seasonal</div>
+        <div style="font-size:15px;font-weight:800;color:#60a5fa;">+18%</div>
+        <div style="font-size:10px;color:#64748b;">gifts/advent</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actionable smart moves -->
+  <div class="card">
+    <div class="card-title">Smart Moves <span class="badge badge-blue">3 quick wins</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:700;color:#34d399;">Move payday → ETF day</span>
+          <span style="font-size:12px;background:#064e3b;color:#34d399;padding:2px 8px;border-radius:999px;font-weight:700;">+€840/yr</span>
+        </div>
+        <div style="font-size:12px;color:#64748b;">ETF auto-invest fires May 20, but salary lands May 15. Aligning them eliminates 5 days of idle cash at ~3.8% opportunity cost.</div>
+        <button class="cta-btn cta-green" onclick="ctaDone(this,'📅 Reminder set for May 10 ✓')">📅 Set calendar reminder</button>
+      </div>
+
+      <div style="background:#f0f9ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:700;color:#60a5fa;">Cap dining out at €120</span>
+          <span style="font-size:12px;background:#bfdbfe;color:#1d4ed8;padding:2px 8px;border-radius:999px;font-weight:700;">+€900/yr</span>
+        </div>
+        <div style="font-size:12px;color:#64748b;">You're averaging €195 vs €120 budget. Cutting €75/month redirected to house deposit closes 50% of the pace gap by itself.</div>
+        <button class="cta-btn cta-blue" onclick="ctaDone(this,'✓ Budget updated to €120')">✏ Update budget limit</button>
+      </div>
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:700;color:#92400e;">Set up Riester now</span>
+          <span style="font-size:12px;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:999px;font-weight:700;">€480 tax win</span>
+        </div>
+        <div style="font-size:12px;color:#64748b;">30 minutes via DWS or Deka. You've already committed to it in your journal. 8 months left before the Dec 31 deadline — later = less benefit.</div>
+        <button class="cta-btn cta-amber" onclick="ctaDone(this,'↗ Opening DWS...')">↗ Open DWS application</button>
+      </div>
+
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:12px;color:#94a3b8;">Combined annual impact if you do all 3</div>
+        <div style="font-size:18px;font-weight:800;color:#34d399;">+€2,220</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- UNDER THE HOOD — ADVANCED ANALYSIS -->
+<div style="padding:0 24px;margin-bottom:0;">
+  <div style="font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+    <span style="flex:1;height:1px;background:#f1f5f9;"></span>
+    <span>Under the Hood — the numbers most apps don't show you</span>
+    <span style="flex:1;height:1px;background:#f1f5f9;"></span>
+  </div>
+</div>
+<div class="grid grid-3" style="margin-bottom:0;">
+
+  <!-- True cost of habits -->
+  <div class="card">
+    <div class="card-title">True Cost of Habits <span class="badge badge-red">Compounded</span></div>
+    <div style="margin-bottom:12px;background:#f0f9ff;border-radius:8px;padding:12px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;">DINING OVERRUN · €75/month above budget</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="text-align:center;">
+          <div style="font-size:11px;color:#64748b;">Cash cost, 16 yrs</div>
+          <div style="font-size:18px;font-weight:800;color:#f87171;">€14,400</div>
+        </div>
+        <div style="text-align:center;border-left:1px solid #e2e8f0;">
+          <div style="font-size:11px;color:#64748b;">If invested @ 7%</div>
+          <div style="font-size:18px;font-weight:800;color:#f87171;">€27,800</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:8px;text-align:center;">That dining habit costs you <strong style="color:#fbbf24;">€27,800 in FIRE money</strong> — not €14,400.</div>
+    </div>
+    <div style="margin-bottom:8px;background:#f0f9ff;border-radius:8px;padding:12px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:4px;">YOUR EFFECTIVE HOURLY RATE</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+        <div>
+          <div style="font-size:20px;font-weight:800;color:#a78bfa;">€24.80<span style="font-size:12px;color:#64748b;font-weight:400;">/hr</span></div>
+          <div style="font-size:11px;color:#64748b;">after tax, social contributions, commute</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:#f87171;font-weight:700;">3.0 hrs/month</div>
+          <div style="font-size:11px;color:#64748b;">wasted on dining overrun</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#f0f9ff;border-radius:8px;padding:12px;">
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;">SAVINGS RATE TREND — the real story</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="font-size:12px;color:#94a3b8;width:28px;">Jan</div>
+        <div style="flex:1;background:#f1f5f9;border-radius:999px;height:8px;"><div style="width:100%;height:100%;background:#34d399;border-radius:999px;"></div></div>
+        <div style="font-size:12px;font-weight:700;color:#34d399;width:28px;">26%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="font-size:12px;color:#94a3b8;width:28px;">Feb</div>
+        <div style="flex:1;background:#f1f5f9;border-radius:999px;height:8px;"><div style="width:92%;height:100%;background:#60a5fa;border-radius:999px;"></div></div>
+        <div style="font-size:12px;font-weight:700;color:#60a5fa;width:28px;">24%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <div style="font-size:12px;color:#94a3b8;width:28px;">Mar</div>
+        <div style="flex:1;background:#f1f5f9;border-radius:999px;height:8px;"><div style="width:85%;height:100%;background:#fbbf24;border-radius:999px;"></div></div>
+        <div style="font-size:12px;font-weight:700;color:#fbbf24;width:28px;">22%</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="font-size:12px;color:#94a3b8;width:28px;">Apr</div>
+        <div style="flex:1;background:#f1f5f9;border-radius:999px;height:8px;"><div style="width:77%;height:100%;background:#f87171;border-radius:999px;"></div></div>
+        <div style="font-size:12px;font-weight:700;color:#f87171;width:28px;">20%</div>
+      </div>
+      <div style="font-size:11px;color:#f87171;margin-top:6px;">↓ −6% in 4 months. At this rate: 14% by August.</div>
+    </div>
+  </div>
+
+  <!-- Money left on the table -->
+  <div class="card">
+    <div class="card-title">Money You're Not Capturing <span class="badge badge-yellow">~€1,140/yr</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:11px 13px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+          <span style="font-size:13px;font-weight:600;color:#fbbf24;">Idle checking cash</span>
+          <span style="font-size:14px;font-weight:800;color:#fbbf24;">+€125/yr</span>
+        </div>
+        <div style="font-size:12px;color:#64748b;">Avg €3,200 sitting in checking earning 0%. ECB deposit rate is 3.9%. A Tagesgeldkonto (DKB, Trade Republic) takes 10 min to open.</div>
+      </div>
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:11px 13px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+          <span style="font-size:13px;font-weight:600;color:#fbbf24;">VL — Vermögenswirksame Leistungen</span>
+          <span style="font-size:14px;font-weight:800;color:#fbbf24;">+€319/yr</span>
+        </div>
+        <div style="font-size:12px;color:#64748b;">Most SW engineers in Germany get €26.59/month from their employer for free. Ask HR. If your company pays, it's €319/year you're leaving on the table.</div>
+      </div>
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:11px 13px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+          <span style="font-size:13px;font-weight:600;color:#fbbf24;">Freistellungsauftrag</span>
+          <span style="font-size:14px;font-weight:800;color:#fbbf24;">+€210/yr</span>
+        </div>
+        <div style="font-size:12px;color:#64748b;">€1,000 tax-free investment income/year (Abgeltungsteuer). If not filed at Scalable Capital, gains are withheld at 26.375% automatically. File it once, done.</div>
+      </div>
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:11px 13px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+          <span style="font-size:13px;font-weight:600;color:#fbbf24;">Arbeitnehmer-Pauschbetrag</span>
+          <span style="font-size:14px;font-weight:800;color:#fbbf24;">+€486/yr</span>
+        </div>
+        <div style="font-size:12px;color:#64748b;">€1,230 Werbungskosten flat deduction — claimed automatically in Steuererklärung. Already applying? Good. If not, this is free money for 0 receipts needed.</div>
+      </div>
+
+      <div style="background:#f0fdf4;border-radius:8px;padding:10px 13px;border:1px solid #bbf7d0;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:12px;color:#94a3b8;">Total uncaptured value/year</div>
+        <div style="font-size:20px;font-weight:800;color:#34d399;">€1,140</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIRE sensitivity matrix + Rent vs Buy -->
+  <div class="card">
+    <div class="card-title">FIRE Sensitivity Matrix</div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:10px;">Success rate by monthly spend × retirement age</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:14px;">
+      <thead>
+        <tr style="color:#475569;">
+          <th style="text-align:left;padding:5px 0;font-weight:600;">Spend/mo</th>
+          <th style="text-align:center;padding:5px;font-weight:600;color:#f87171;">Age 50</th>
+          <th style="text-align:center;padding:5px;font-weight:600;color:#fbbf24;">Age 52</th>
+          <th style="text-align:center;padding:5px;font-weight:600;color:#34d399;">Age 55</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top:1px solid #e2e8f0;background:#fffbeb;">
+          <td style="padding:6px 0;color:#fbbf24;font-weight:600;">€3,783 ← now</td>
+          <td style="text-align:center;color:#f87171;font-weight:800;padding:6px;">68%</td>
+          <td style="text-align:center;color:#fbbf24;font-weight:800;padding:6px;">84%</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">94%</td>
+        </tr>
+        <tr style="border-top:1px solid #e2e8f0;">
+          <td style="padding:6px 0;color:#60a5fa;">€3,500 (fix dining)</td>
+          <td style="text-align:center;color:#fbbf24;font-weight:800;padding:6px;">79%</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">91%</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">97%</td>
+        </tr>
+        <tr style="border-top:1px solid #e2e8f0;">
+          <td style="padding:6px 0;color:#60a5fa;">€3,500 + €200 ETF</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">88%</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">96%</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">99%</td>
+        </tr>
+        <tr style="border-top:1px solid #e2e8f0;">
+          <td style="padding:6px 0;color:#a78bfa;">€3,200 (lean FIRE)</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">94%</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">99%</td>
+          <td style="text-align:center;color:#34d399;font-weight:800;padding:6px;">99%</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="insight insight-info" style="margin-bottom:12px;">
+      <div class="insight-icon">💡</div>
+      <div class="insight-text">Fixing dining alone adds <strong>+11% success rate</strong> at age 50. That's worth more than 2 extra years of working.</div>
+    </div>
+    <div style="border-top:1px solid #e2e8f0;padding-top:12px;">
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Rent vs Buy — Berlin 2026</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+        <div style="background:#f0f9ff;border-radius:6px;padding:8px;text-align:center;">
+          <div style="font-size:11px;color:#64748b;">Current rent</div>
+          <div style="font-size:16px;font-weight:800;color:#f87171;">€1,450/mo</div>
+          <div style="font-size:10px;color:#64748b;">Pure expense, no equity</div>
+        </div>
+        <div style="background:#f0f9ff;border-radius:6px;padding:8px;text-align:center;">
+          <div style="font-size:11px;color:#64748b;">€350k flat mortgage</div>
+          <div style="font-size:16px;font-weight:800;color:#34d399;">€1,456/mo</div>
+          <div style="font-size:10px;color:#64748b;">Equity + appreciation</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;background:#f0fdf4;border-radius:6px;padding:8px;">Delta: <strong style="color:#34d399;">+€6/mo</strong> to own vs rent — but €70k deposit needed. At current pace: ready <strong style="color:#60a5fa;">Oct 2030</strong>. Speed up with dining fix: <strong style="color:#34d399;">Apr 2029</strong>.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- NET WORTH MILESTONE TIMELINE -->
+<div style="padding:0 24px 0;">
+  <div class="card" style="background:#f8fafc;border-color:#e2e8f0;">
+    <div class="card-title" style="margin-bottom:16px;">Net Worth Milestone Timeline <span class="badge badge-purple">at current pace</span></div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:0;position:relative;">
+      <!-- Timeline line -->
+      <div style="position:absolute;top:22px;left:8%;right:8%;height:2px;background:linear-gradient(90deg,#34d399,#60a5fa,#a78bfa,#f59e0b,#f87171,#ec4899);"></div>
+
+      <div style="text-align:center;position:relative;z-index:1;">
+        <div style="width:14px;height:14px;border-radius:50%;background:#34d399;margin:16px auto 8px;border:2px solid #ffffff;"></div>
+        <div style="font-size:18px;font-weight:800;color:#34d399;">€75k</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">July 2026</div>
+        <div style="font-size:10px;color:#34d399;margin-top:2px;">3 months</div>
+      </div>
+      <div style="text-align:center;position:relative;z-index:1;">
+        <div style="width:14px;height:14px;border-radius:50%;background:#60a5fa;margin:16px auto 8px;border:2px solid #ffffff;"></div>
+        <div style="font-size:18px;font-weight:800;color:#60a5fa;">€80k</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">Oct 2026</div>
+        <div style="font-size:10px;color:#60a5fa;margin-top:2px;">6 months</div>
+      </div>
+      <div style="text-align:center;position:relative;z-index:1;">
+        <div style="width:16px;height:16px;border-radius:50%;background:#a78bfa;margin:15px auto 8px;border:3px solid #7c3aed;"></div>
+        <div style="font-size:20px;font-weight:800;color:#a78bfa;">€100k</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">Jun 2027</div>
+        <div style="font-size:10px;color:#a78bfa;margin-top:2px;">🎯 14 months</div>
+      </div>
+      <div style="text-align:center;position:relative;z-index:1;">
+        <div style="width:14px;height:14px;border-radius:50%;background:#f59e0b;margin:16px auto 8px;border:2px solid #ffffff;"></div>
+        <div style="font-size:18px;font-weight:800;color:#f59e0b;">€200k</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">2030</div>
+        <div style="font-size:10px;color:#f59e0b;margin-top:2px;">4 yrs</div>
+      </div>
+      <div style="text-align:center;position:relative;z-index:1;">
+        <div style="width:14px;height:14px;border-radius:50%;background:#f87171;margin:16px auto 8px;border:2px solid #ffffff;"></div>
+        <div style="font-size:18px;font-weight:800;color:#f87171;">€450k</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">2036</div>
+        <div style="font-size:10px;color:#f87171;margin-top:2px;">½ FIRE · 10 yrs</div>
+      </div>
+      <div style="text-align:center;position:relative;z-index:1;">
+        <div style="width:18px;height:18px;border-radius:50%;background:#ec4899;margin:14px auto 8px;border:3px solid #be185d;"></div>
+        <div style="font-size:20px;font-weight:800;color:#ec4899;">€900k</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">2042</div>
+        <div style="font-size:10px;color:#ec4899;margin-top:2px;">🔥 FIRE · age 50</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:11px;color:#64748b;">If savings rate stays at 22%</div>
+        <div style="font-size:13px;font-weight:700;color:#fbbf24;">FIRE at 51 · 68% success</div>
+      </div>
+      <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;border:1px solid #bbf7d0;">
+        <div style="font-size:11px;color:#64748b;">If savings rate → 25% (fix dining)</div>
+        <div style="font-size:13px;font-weight:700;color:#34d399;">FIRE at 50 · 88% success</div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:11px;color:#64748b;">Income vulnerability</div>
+        <div style="font-size:13px;font-weight:700;color:#f87171;">100% labor · no passive income</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BENCHMARKS + CASH FLOW -->
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title">How you compare <span style="font-size:10px;color:#475569;font-weight:400;text-transform:none;letter-spacing:0;">Bundesbank / ECB HFCS 2023</span></div>
+
+    <div class="bench-row">
+      <div class="bench-label">Savings rate</div>
+      <div class="bench-bar-wrap">
+        <div class="bench-bar" style="width:79%;background:linear-gradient(90deg,#1d4ed8,#34d399);"></div>
+        <div class="bench-marker" style="left:25%;"></div>
+      </div>
+      <div class="bench-val" style="color:#34d399;">22%</div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin:-6px 0 12px 130px;">You're in the top 25% · German avg: 11%</div>
+
+    <div class="bench-row">
+      <div class="bench-label">Emergency fund</div>
+      <div class="bench-bar-wrap">
+        <div class="bench-bar" style="width:70%;background:linear-gradient(90deg,#1d4ed8,#60a5fa);"></div>
+        <div class="bench-marker" style="left:50%;"></div>
+      </div>
+      <div class="bench-val" style="color:#60a5fa;">4.2 mo</div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin:-6px 0 12px 130px;">Adequate (3–6 months recommended)</div>
+
+    <div class="bench-row">
+      <div class="bench-label">Debt-to-income</div>
+      <div class="bench-bar-wrap">
+        <div class="bench-bar" style="width:2%;background:#34d399;"></div>
+        <div class="bench-marker" style="left:36%;"></div>
+      </div>
+      <div class="bench-val" style="color:#34d399;">0.00</div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin:-6px 0 12px 130px;">Excellent · Mortgage threshold: 0.36</div>
+
+    <div class="bench-row">
+      <div class="bench-label">Housing cost</div>
+      <div class="bench-bar-wrap">
+        <div class="bench-bar" style="width:72%;background:linear-gradient(90deg,#1d4ed8,#fbbf24);"></div>
+        <div class="bench-marker" style="left:56%;"></div>
+      </div>
+      <div class="bench-val" style="color:#fbbf24;">30%</div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin:-6px 0 12px 130px;">Stretched (comfortable &lt;28%) — common in Berlin</div>
+
+    <div class="bench-row">
+      <div class="bench-label">Net worth age 34</div>
+      <div class="bench-bar-wrap">
+        <div class="bench-bar" style="width:68%;background:linear-gradient(90deg,#1d4ed8,#a78bfa);"></div>
+        <div class="bench-marker" style="left:40%;"></div>
+      </div>
+      <div class="bench-val" style="color:#a78bfa;">p60</div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin:-6px 0 12px 130px;">Above median for DE (p50: €28k, you: €67.5k)</div>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;">
+      <div style="font-size:11px;color:#64748b;font-weight:600;margin-bottom:6px;">🏙 PEER GROUP: Berlin Software Engineers, 30–36, single</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:#94a3b8;">Net worth</div>
+          <div style="font-size:14px;font-weight:800;color:#34d399;">Top 28%</div>
+        </div>
+        <div style="text-align:center;border-left:1px solid #e2e8f0;">
+          <div style="font-size:10px;color:#94a3b8;">Savings rate</div>
+          <div style="font-size:14px;font-weight:800;color:#34d399;">Top 22%</div>
+        </div>
+        <div style="text-align:center;border-left:1px solid #e2e8f0;">
+          <div style="font-size:10px;color:#94a3b8;">Emergency fund</div>
+          <div style="font-size:14px;font-weight:800;color:#60a5fa;">Top 40%</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="card-title">30-Day Cash Flow Forecast <span class="badge badge-green">No overdraft risk</span></div>
+    <canvas id="cfChart" height="100"></canvas>
+    <div style="margin-top:14px;">
+      <div class="cf-row">
+        <div class="cf-date">Apr 28</div>
+        <div class="cf-desc">Rent · Recurring</div>
+        <div class="cf-amount" style="color:#f87171;">−€1,450</div>
+        <div class="cf-bal">€3,680</div>
+      </div>
+      <div class="cf-row">
+        <div class="cf-date">Apr 30</div>
+        <div class="cf-desc">Spotify, Netflix, GitHub · Subscriptions</div>
+        <div class="cf-amount" style="color:#f87171;">−€42</div>
+        <div class="cf-bal">€3,638</div>
+      </div>
+      <div class="cf-row">
+        <div class="cf-date">May 15</div>
+        <div class="cf-desc">Salary · Employer</div>
+        <div class="cf-amount" style="color:#34d399;">+€4,850</div>
+        <div class="cf-bal">€8,488</div>
+      </div>
+      <div class="cf-row">
+        <div class="cf-date">May 20</div>
+        <div class="cf-desc">ETF auto-invest · Scalable Capital</div>
+        <div class="cf-amount" style="color:#a78bfa;">−€800</div>
+        <div class="cf-bal">€7,688</div>
+      </div>
+      <div class="cf-row">
+        <div class="cf-date">May 28</div>
+        <div class="cf-desc">Rent · Recurring</div>
+        <div class="cf-amount" style="color:#f87171;">−€1,450</div>
+        <div class="cf-bal">€6,238</div>
+      </div>
+      <div style="margin-top:10px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+        <div style="font-size:12px;color:#34d399;font-weight:700;">Minimum balance in 30 days: €3,638 on Apr 30</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px;">Well above the €200 safety threshold. Looking good.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GOALS + JOURNAL -->
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-title">Goals</div>
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1e293b;">Emergency Fund</div>
+          <div style="font-size:11px;color:#64748b;">€12,000 of €15,000 · Dec 2026</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13px;font-weight:700;color:#34d399;">80%</div>
+          <div style="font-size:11px;color:#34d399;">On pace ✓</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:80%;background:#34d399;"></div></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1e293b;">House Deposit</div>
+          <div style="font-size:11px;color:#64748b;">€5,500 of €80,000 · Dec 2028</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13px;font-weight:700;color:#fbbf24;">7%</div>
+          <div style="font-size:11px;color:#fbbf24;">Behind pace ⚠</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:7%;background:#fbbf24;"></div></div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1e293b;">Japan Trip</div>
+          <div style="font-size:11px;color:#64748b;">€1,800 of €3,000 · Oct 2026</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:13px;font-weight:700;color:#60a5fa;">60%</div>
+          <div style="font-size:11px;color:#60a5fa;">On pace ✓</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:60%;background:#60a5fa;"></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Financial Journal &amp; Decisions</div>
+    <div style="position:relative;padding-left:16px;border-left:2px solid #e2e8f0;">
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;color:#64748b;">Apr 2026 · Decision</div>
+        <div style="font-size:13px;color:#1e293b;margin-top:2px;font-weight:600;">Switched ETF auto-invest from €600 → €800/month</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">After March raise. Outcome so far: +€200/month compounding.</div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;color:#64748b;">Mar 2026 · Milestone 🎉</div>
+        <div style="font-size:13px;color:#34d399;margin-top:2px;font-weight:600;">Emergency fund crossed €10k</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Two months ahead of plan. Redirecting surplus to house deposit.</div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;color:#fbbf24;">Mar 2026 · Commitment — Open</div>
+        <div style="font-size:13px;color:#1e293b;margin-top:2px;font-weight:600;">Set up Riester contract before June</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Identified €480/year in tax savings. Due in 64 days.</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#64748b;">Jan 2026 · Decision</div>
+        <div style="font-size:13px;color:#1e293b;margin-top:2px;font-weight:600;">Decided not to buy a car, keep using BVG + rental</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Saving ~€380/month vs ownership. Reassess in 2027.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DECISIONS THAT PAID OFF -->
+<div class="grid" style="grid-template-columns:1fr;padding-bottom:0;">
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px;">📈 Decisions that changed your trajectory <span class="badge badge-green">Verified impact</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <div style="position:relative;padding-left:16px;border-left:3px solid #34d399;">
+        <div style="font-size:10px;color:#34d399;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Jan 2026 · Car decision</div>
+        <div style="font-size:13px;font-weight:700;color:#0f172a;margin:4px 0 3px;">Chose BVG over car ownership</div>
+        <div style="font-size:12px;color:#475569;">Avoided ~€380/month (insurance, fuel, parking, depreciation) vs BVG cost.</div>
+        <div style="margin-top:8px;background:#f0fdf4;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;color:#64748b;">Actual impact YTD (4 months)</div>
+          <div style="font-size:18px;font-weight:800;color:#34d399;">+€1,520</div>
+          <div style="font-size:11px;color:#94a3b8;">saved vs ownership</div>
+        </div>
+      </div>
+      <div style="position:relative;padding-left:16px;border-left:3px solid #60a5fa;">
+        <div style="font-size:10px;color:#60a5fa;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Mar 2026 · Investing</div>
+        <div style="font-size:13px;font-weight:700;color:#0f172a;margin:4px 0 3px;">Raised ETF from €600 → €800/month</div>
+        <div style="font-size:12px;color:#475569;">After March raise, immediately auto-invested the difference instead of letting lifestyle creep absorb it.</div>
+        <div style="margin-top:8px;background:#eff6ff;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;color:#64748b;">Extra invested + gains (2 months)</div>
+          <div style="font-size:18px;font-weight:800;color:#60a5fa;">+€412</div>
+          <div style="font-size:11px;color:#94a3b8;">€400 extra · €12 return so far</div>
+        </div>
+      </div>
+      <div style="position:relative;padding-left:16px;border-left:3px solid #a78bfa;">
+        <div style="font-size:10px;color:#a78bfa;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Mar 2026 · Goal redirect</div>
+        <div style="font-size:13px;font-weight:700;color:#0f172a;margin:4px 0 3px;">Redirected surplus to house deposit</div>
+        <div style="font-size:12px;color:#475569;">Emergency fund hit €10k — 2 months early. Instead of spending the surplus, redirected €200/month to house goal.</div>
+        <div style="margin-top:8px;background:#faf5ff;border-radius:6px;padding:8px 10px;">
+          <div style="font-size:10px;color:#64748b;">House deposit accelerated by</div>
+          <div style="font-size:18px;font-weight:800;color:#a78bfa;">5 months</div>
+          <div style="font-size:11px;color:#94a3b8;">target date: Apr 2029 vs Oct 2030</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px;background:#f8fafc;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:14px;border:1px solid #e2e8f0;">
+      <div style="font-size:24px;">💬</div>
+      <div style="font-size:12px;color:#475569;line-height:1.5;"><strong style="color:#0f172a;">Combined verified impact in 2026: +€1,932 more than if you'd done nothing different.</strong> These aren't projections — they're measured against what would have happened on your prior trajectory.</div>
+    </div>
+  </div>
+</div>
+
+<!-- YEAR AT A GLANCE SUMMARY -->
+<div style="padding:0 24px 16px;">
+  <div class="card" style="background:linear-gradient(135deg,#eff6ff 0%,#ffffff 100%);border-color:#bfdbfe;">
+    <div class="card-title" style="margin-bottom:16px;">2026 so far — the honest picture <span class="badge badge-blue">April · 4 months in</span></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;">
+      <div style="text-align:center;background:#f0f9ff;border-radius:8px;padding:12px;">
+        <div style="font-size:22px;font-weight:800;color:#34d399;">↑ €4,200</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px;">Net worth gained</div>
+        <div style="font-size:11px;color:#34d399;margin-top:2px;">+€1,050/month avg</div>
+      </div>
+      <div style="text-align:center;background:#f0f9ff;border-radius:8px;padding:12px;">
+        <div style="font-size:22px;font-weight:800;color:#60a5fa;">€3,200</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px;">Invested in ETFs</div>
+        <div style="font-size:11px;color:#60a5fa;margin-top:2px;">€800/month → Scalable</div>
+      </div>
+      <div style="text-align:center;background:#fffbeb;border-radius:8px;padding:12px;">
+        <div style="font-size:22px;font-weight:800;color:#fbbf24;">−€720</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px;">Budget overruns</div>
+        <div style="font-size:11px;color:#fbbf24;margin-top:2px;">Food + dining · 4 months</div>
+      </div>
+      <div style="text-align:center;background:#f0f9ff;border-radius:8px;padding:12px;">
+        <div style="font-size:22px;font-weight:800;color:#a78bfa;">€0</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px;">Debt carried</div>
+        <div style="font-size:11px;color:#a78bfa;margin-top:2px;">Debt-free all year ✓</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <div style="background:#f0fdf4;border-radius:8px;padding:10px 14px;border:1px solid #bbf7d0;">
+        <div style="font-size:11px;color:#34d399;font-weight:700;margin-bottom:4px;">✓ WORKING WELL</div>
+        <div style="font-size:12px;color:#334155;">Consistent investing, zero debt, savings rate 2x German average, emergency fund in the safe zone.</div>
+      </div>
+      <div style="background:#fffbeb;border-radius:8px;padding:10px 14px;border:1px solid #fde68a;">
+        <div style="font-size:11px;color:#fbbf24;font-weight:700;margin-bottom:4px;">⚠ NEEDS ATTENTION</div>
+        <div style="font-size:12px;color:#334155;">Food/dining creep now structural, not seasonal. House deposit pace gap of €150/month. Riester deadline approaching.</div>
+      </div>
+      <div style="background:#f0f9ff;border-radius:8px;padding:10px 14px;border:1px solid #bfdbfe;">
+        <div style="font-size:11px;color:#60a5fa;font-weight:700;margin-bottom:4px;">→ NEXT BEST MOVES</div>
+        <div style="font-size:12px;color:#334155;">Set up Riester (€480 tax back), cap dining at €120, redirect surplus €150 to house deposit goal.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div style="padding:16px 24px;color:#334155;font-size:11px;text-align:center;border-top:1px solid #e2e8f0;margin-top:4px;">
+  Finance Assistant · Demo · All figures are illustrative · Not financial advice · Data never leaves your machine
 </div>
 
 <script>
-// This template is populated by workspace_builder data.
-// Replace the sample data below with actual workspace JSON.
-const data = {
-  financial_health_pct: 75,
-  net_worth: 45000,
-  total_assets: 62000,
-  total_liabilities: 17000,
-  scores: { budget: 80, savings: 60, investments: 70, debt: 85, insurance: 50 },
-  portfolio_value: 28000,
-  portfolio_return_pct: 12.3,
-  open_tasks: [
-    "Set up an emergency fund goal",
-    "Review insurance coverage gaps",
-    "Import last month's bank statement",
-  ],
+// ── Injected data (populated by generate_html_dashboard; falls back to demo values) ──
+const FD = window.FINANCE_DATA || {};
+const NW_LABELS = FD.nw_labels || ['May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'];
+const NW_DATA   = FD.nw_data   || [52100,53400,54800,55200,56900,58100,59400,61200,63000,64800,66300,67500];
+const BUDGET_LABELS = FD.budget_labels || ['Housing','Food','Eating out','Transport','Subs','Entertainment','Savings'];
+const BUDGET_DATA   = FD.budget_data   || [1450,380,195,118,62,88,1067];
+const SPEND_LABELS  = FD.spend_labels  || ['Nov','Dec','Jan','Feb','Mar','Apr'];
+const SPEND_DATA    = FD.spend_data    || {
+  Food:      [290,420,312,335,358,380],
+  Transport: [145,138,132,128,122,118],
+  'Eating out': [110,160,125,140,168,195],
+  Other:     [480,680,510,525,840,540],
+};
+const FIRE_DATA = FD.fire_data || [12,28,45,72,110,148,182,210,198,167,142,118,89,58,32,18,9,4,2,1];
+const CF_LABELS = FD.cf_labels || null;
+const CF_DATA   = FD.cf_data   || [5130,5130,5020,3570,3528,3528,3528,3450,3380,3300,3250,3180,3110,3040,3040,7890,7840,7780,7090,7040,6990,6840,6780,6720,6650,5200,5160,5100,5050,4990];
+const PEER_DATA = FD.peer_data || null;
+const DOW_DATA  = FD.dow_data  || [
+  { label: 'Mon', avg: 48,  color: '#60a5fa', weekend: false },
+  { label: 'Tue', avg: 42,  color: '#34d399', weekend: false },
+  { label: 'Wed', avg: 55,  color: '#60a5fa', weekend: false },
+  { label: 'Thu', avg: 60,  color: '#60a5fa', weekend: false },
+  { label: 'Fri', avg: 118, color: '#fbbf24', weekend: false },
+  { label: 'Sat', avg: 185, color: '#f97316', weekend: true  },
+  { label: 'Sun', avg: 92,  color: '#f97316', weekend: true  },
+];
+
+const chartDefaults = {
+  plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e293b', titleColor: '#94a3b8', bodyColor: '#f1f5f9', borderColor: '#e2e8f0', borderWidth: 1 } },
+  scales: { x: { grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8', font: { size: 11 } } }, y: { grid: { color: '#f1f5f9' }, ticks: { color: '#94a3b8', font: { size: 11 } } } }
 };
 
-document.getElementById("date").textContent = new Date().toLocaleDateString("en-DE", { dateStyle: "long" });
-document.getElementById("health-score").textContent = data.financial_health_pct + "%";
-const offset = 327 - (327 * data.financial_health_pct / 100);
-document.getElementById("health-ring").setAttribute("stroke-dashoffset", offset);
+// Net Worth Chart
+new Chart(document.getElementById('nwChart'), {
+  type: 'line',
+  data: {
+    labels: NW_LABELS,
+    datasets: [{
+      data: NW_DATA,
+      borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.08)',
+      fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#34d399'
+    }]
+  },
+  options: { ...chartDefaults, plugins: { ...chartDefaults.plugins }, scales: { x: chartDefaults.scales.x, y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '€'+v.toLocaleString('de') } } } }
+});
 
-const fmt = n => "€" + n.toLocaleString("de-DE");
-document.getElementById("net-worth").textContent = fmt(data.net_worth);
-document.getElementById("net-worth").className = "big-number " + (data.net_worth >= 0 ? "positive" : "negative");
-document.getElementById("assets").textContent = fmt(data.total_assets);
-document.getElementById("liabilities").textContent = fmt(data.total_liabilities);
-document.getElementById("portfolio-value").textContent = fmt(data.portfolio_value);
-document.getElementById("portfolio-return").textContent = (data.portfolio_return_pct >= 0 ? "+" : "") + data.portfolio_return_pct.toFixed(1) + "%";
-document.getElementById("portfolio-return").className = "stat-value " + (data.portfolio_return_pct >= 0 ? "positive" : "negative");
+// Budget Doughnut
+new Chart(document.getElementById('budgetChart'), {
+  type: 'doughnut',
+  data: {
+    labels: BUDGET_LABELS,
+    datasets: [{
+      data: BUDGET_DATA,
+      backgroundColor: ['#1d4ed8','#f87171','#fb923c','#60a5fa','#a78bfa','#34d399','#fbbf24'],
+      borderWidth: 2, borderColor: '#e2e8f0'
+    }]
+  },
+  options: {
+    cutout: '65%',
+    plugins: {
+      legend: { display: true, position: 'bottom', labels: { color: '#64748b', font: { size: 10 }, boxWidth: 10, padding: 8 } },
+      tooltip: chartDefaults.plugins.tooltip
+    }
+  }
+});
 
-const scoresEl = document.getElementById("domain-scores");
-for (const [k, v] of Object.entries(data.scores)) {
-  const color = v >= 70 ? "var(--green)" : v >= 40 ? "var(--yellow)" : "var(--red)";
-  scoresEl.innerHTML += `<div class="domain-score"><div class="score" style="color:${color}">${v}%</div><div class="label">${k}</div></div>`;
+// Spending Trends
+const _spendColors = ['rgba(248,113,113,0.8)','rgba(96,165,250,0.8)','rgba(251,146,60,0.8)','rgba(100,116,139,0.5)'];
+new Chart(document.getElementById('spendChart'), {
+  type: 'bar',
+  data: {
+    labels: SPEND_LABELS,
+    datasets: Object.entries(SPEND_DATA).map(([lbl, vals], i) => ({
+      label: lbl, data: vals, backgroundColor: _spendColors[i % _spendColors.length]
+    }))
+  },
+  options: {
+    ...chartDefaults,
+    plugins: { legend: { display: true, labels: { color: '#64748b', font: { size: 10 }, boxWidth: 10 } }, tooltip: chartDefaults.plugins.tooltip },
+    scales: { x: { ...chartDefaults.scales.x, stacked: true }, y: { ...chartDefaults.scales.y, stacked: true, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '€'+v } } }
+  }
+});
+
+// FIRE Monte Carlo — histogram
+const hist = FIRE_DATA;
+const labels = Array.from({length:hist.length},(_,i)=>'€'+(300+i*35)+'k');
+new Chart(document.getElementById('fireChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Simulation runs',
+      data: hist,
+      backgroundColor: hist.map((_,i) => i < 7 ? 'rgba(248,113,113,0.7)' : i < 12 ? 'rgba(251,191,36,0.7)' : 'rgba(52,211,153,0.7)'),
+      borderWidth: 0
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: { legend: { display: false }, tooltip: chartDefaults.plugins.tooltip },
+    scales: {
+      x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 5 } },
+      y: { ...chartDefaults.scales.y, title: { display: true, text: 'runs', color: '#475569', font: { size: 10 } } }
+    }
+  }
+});
+
+// Cash flow 30-day
+const cfDates = CF_LABELS || Array.from({length:CF_DATA.length},(_,i)=>{const d=new Date(2026,3,27+i);return `${d.getDate()}/${d.getMonth()+1}`;});
+new Chart(document.getElementById('cfChart'), {
+  type: 'line',
+  data: {
+    labels: cfDates,
+    datasets: [{
+      data: CF_DATA,
+      borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,0.08)',
+      fill: true, tension: 0.2, pointRadius: 0
+    }, {
+      data: Array(30).fill(200),
+      borderColor: '#f87171', borderDash: [4,4], pointRadius: 0, borderWidth: 1
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    scales: {
+      x: { ...chartDefaults.scales.x, ticks: { ...chartDefaults.scales.x.ticks, maxTicksLimit: 8 } },
+      y: { ...chartDefaults.scales.y, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '€'+v.toLocaleString() } }
+    }
+  }
+});
+
+// ── Spending Heatmap ──────────────────────────────────────────────────────────
+(function() {
+  const DAYS = 7, WEEKS = 16;
+  // Seeded daily spend data: base by day-of-week (0=Mon)
+  const BASE = [48, 42, 55, 60, 118, 185, 92];
+  // Generate deterministic data using a simple seed
+  function seeded(seed) { return ((Math.sin(seed) * 9301 + 49297) % 233280) / 233280; }
+
+  const cells = [];
+  const today = new Date(2026, 3, 26); // April 26 2026
+  const startOffset = WEEKS * DAYS; // go back 16 weeks
+  let seed = 1;
+
+  for (let w = 0; w < WEEKS; w++) {
+    for (let d = 0; d < DAYS; d++) {
+      const daysBack = startOffset - (w * DAYS + d);
+      const date = new Date(today);
+      date.setDate(today.getDate() - daysBack);
+
+      // Future = null
+      if (date > today) { cells.push({ date, spend: null }); continue; }
+
+      let spend = BASE[d] * (0.65 + seeded(seed++) * 0.75);
+      // March spike (weeks 10-11, Fri-Sun)
+      if (w >= 10 && w <= 11 && d >= 4) spend *= 1.9;
+      // Feb low (weeks 6-7)
+      if (w >= 6 && w <= 7 && d <= 4) spend *= 0.65;
+      // Occasional zero
+      if (seeded(seed++) < 0.08) spend = 0;
+
+      cells.push({ date, spend: Math.round(spend) });
+    }
+  }
+
+  function heatColor(s) {
+    if (s === null) return '#f1f5f9';
+    if (s === 0)    return '#f8fafc';
+    if (s < 40)     return '#dcfce7';
+    if (s < 90)     return '#86efac';
+    if (s < 160)    return '#fbbf24';
+    if (s < 280)    return '#f97316';
+    return '#ef4444';
+  }
+
+  const grid = document.getElementById('heatmapGrid');
+  const tooltip = document.createElement('div');
+  tooltip.className = 'hm-tooltip';
+  document.body.appendChild(tooltip);
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  cells.forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'hm-cell';
+    el.style.background = heatColor(c.spend);
+    if (c.spend !== null) {
+      el.addEventListener('mousemove', e => {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 12) + 'px';
+        tooltip.style.top  = (e.clientY - 30) + 'px';
+        const d = c.date;
+        tooltip.textContent = `${DAY_NAMES[d.getDay()===0?6:d.getDay()-1]} ${d.getDate()} ${MONTHS[d.getMonth()]} · €${c.spend}`;
+      });
+      el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    }
+    grid.appendChild(el);
+  });
+
+  // Month labels — one per week column header
+  const labelDiv = document.getElementById('hmMonthLabels');
+  let lastMonth = -1;
+  for (let w = 0; w < WEEKS; w++) {
+    const idx = w * DAYS; // Mon of this week
+    const d = cells[idx]?.date;
+    const span = document.createElement('div');
+    span.style.cssText = 'width:17px;flex-shrink:0;font-size:10px;color:#94a3b8;overflow:hidden;';
+    if (d && d.getMonth() !== lastMonth) {
+      span.textContent = MONTHS[d.getMonth()];
+      lastMonth = d.getMonth();
+    }
+    labelDiv.appendChild(span);
+  }
+})();
+
+// ── Day-of-Week chart ─────────────────────────────────────────────────────────
+(function() {
+  const DOW = DOW_DATA;
+  const max = Math.max(...DOW.map(d => d.avg));
+  const container = document.getElementById('dowChart');
+
+  DOW.forEach(day => {
+    const row = document.createElement('div');
+    row.className = 'dow-row';
+    const pct = Math.round(day.avg / max * 100);
+    row.innerHTML = `
+      <div class="dow-label" style="font-weight:${day.weekend?'700':'400'};color:${day.weekend?'#f97316':'#64748b'};">${day.label}</div>
+      <div class="dow-bar-bg">
+        <div class="dow-bar-fill" style="width:${pct}%;background:${day.color};"></div>
+      </div>
+      <div class="dow-val" style="color:${day.color};">€${day.avg}</div>
+    `;
+    container.appendChild(row);
+  });
+})();
+
+// ── Scenario comparison ───────────────────────────────────────────────────────
+const SCENARIO_STATE = { dining: true, riester: true, etf: true };
+
+function toggleScenario(key, btn) {
+  SCENARIO_STATE[key] = !SCENARIO_STATE[key];
+  btn.className = 'toggle-btn ' + (SCENARIO_STATE[key] ? 'toggle-on' : 'toggle-off');
+  updateScenario();
 }
 
-const actionsEl = document.getElementById("actions-list");
-data.open_tasks.forEach(t => { actionsEl.innerHTML += `<li>${t}</li>`; });
+function updateScenario() {
+  const { dining, riester, etf } = SCENARIO_STATE;
+  // Deltas
+  const extraMonthly = (dining ? 75 : 0) + (etf ? 70 : 0); // extra monthly savings
+  const taxBonus = riester ? 480 : 0;
+  const totalAnnualGain = extraMonthly * 12 + taxBonus;
+
+  // Year-end NW (8 months left)
+  const nwDelta = Math.round(extraMonthly * 8 + taxBonus * 0.67);
+  const nw = 79200 + nwDelta;
+
+  // Savings rate
+  const srDelta = dining ? 2 : 0 + (etf ? 1 : 0);
+  const sr = 22 + srDelta;
+
+  // FIRE date
+  const fireYearDelta = dining && etf ? -2 : (dining || etf ? -1 : 0);
+  const fireYear = 2042 + fireYearDelta;
+  const fireSuccess = dining && etf ? 88 : (dining ? 79 : (etf ? 74 : 68));
+
+  // Monthly investment
+  const invDelta = (dining ? 75 : 0) + (etf ? 70 : 0);
+  const inv = 800 + invDelta;
+
+  // House deposit (months earlier)
+  const houseMoEarlier = (dining ? 14 : 0) + (etf ? 8 : 0);
+  const houseDate = houseMoEarlier >= 18 ? 'Mar 2029' : houseMoEarlier >= 12 ? 'Apr 2029' : houseMoEarlier >= 8 ? 'Dec 2029' : 'Oct 2030';
+  const houseSame = houseMoEarlier === 0;
+
+  // Tax refund
+  const taxRefund = 380 + taxBonus;
+
+  // Dining
+  const diningAmt = dining ? 120 : 195;
+
+  // 5yr NW (compound effect, 7% return)
+  const extra5yr = Math.round(invDelta * 12 * 5 * 1.18 + taxBonus * 5 * 1.08);
+  const nw5yr = 143000 + extra5yr;
+
+  // Update DOM
+  set('sc-nw',     '€' + nw.toLocaleString(), nwDelta > 0 ? `+€${nwDelta.toLocaleString()}` : '');
+  set('sc-sr',     sr + '%',                  srDelta > 0 ? `+${srDelta}%` : '');
+  document.getElementById('sc-fire').textContent = fireYear;
+  document.getElementById('sc-fire-sub').textContent = `age ${34+(fireYear-2026)} · ${fireSuccess}% success`;
+  set('sc-inv',    '€' + inv,                 invDelta > 0 ? `+€${invDelta}` : '');
+  set('sc-house',  houseDate,                 !houseSame ? `${houseMoEarlier} mo earlier` : '');
+  set('sc-tax',    '~€' + taxRefund,          taxBonus > 0 ? `+€${taxBonus}` : '');
+  document.getElementById('sc-dining').textContent = '€' + diningAmt;
+  document.getElementById('sc-dining').style.color = dining ? '#059669' : '#f87171';
+  set('sc-5yr',    '€' + Math.round(nw5yr/1000) + 'k', extra5yr > 0 ? `+€${Math.round(extra5yr/1000)}k` : '');
+
+  // Total gain pill
+  document.getElementById('totalGain').textContent = totalAnnualGain > 0 ? `+€${totalAnnualGain.toLocaleString()}/yr` : 'No changes selected';
+
+  // Insight
+  const ins = document.getElementById('scenarioInsight');
+  if (!dining && !riester && !etf) {
+    ins.style.cssText = 'margin-top:14px;padding:12px 14px;border-radius:8px;font-size:12px;line-height:1.6;background:#f1f5f9;color:#64748b;';
+    ins.textContent = 'All optimizations are toggled off. Enable one or more above to see the compounded impact.';
+  } else {
+    ins.style.cssText = 'margin-top:14px;padding:12px 14px;border-radius:8px;font-size:12px;line-height:1.6;background:#f0fdf4;border-left:3px solid #34d399;color:#0f172a;';
+    const parts = [];
+    if (dining) parts.push('capping dining saves €75/month — that closes your house deposit gap by itself');
+    if (riester) parts.push(`Riester adds €480 in tax back for ~30 minutes of paperwork`);
+    if (etf) parts.push('aligning your ETF with payday eliminates idle cash drag');
+    ins.innerHTML = `<strong>With these changes:</strong> ${parts.join('; ')}. Combined that's <strong style="color:#059669;">+€${totalAnnualGain.toLocaleString()} per year</strong> — and the FIRE date moves to ${fireYear} with a ${fireSuccess}% success rate.`;
+  }
+}
+
+function set(id, val, delta) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  const dl = document.getElementById(id + '-d');
+  if (dl) { dl.textContent = delta; dl.style.display = delta ? 'inline-block' : 'none'; }
+}
+
+updateScenario();
+
+// ── Alert drawer ──────────────────────────────────────────────────────────────
+function openAlerts() {
+  document.getElementById('alertDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+function closeAlerts() {
+  document.getElementById('alertDrawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+function markDone(el, cls) {
+  const item = el.closest('.alert-item');
+  item.style.opacity = '0.45';
+  el.textContent = '✓ Done';
+  el.style.color = '#94a3b8';
+  el.style.cursor = 'default';
+  el.onclick = null;
+}
+
+// ── CTA buttons ───────────────────────────────────────────────────────────────
+function ctaDone(btn, msg) {
+  btn.textContent = msg;
+  btn.className = 'cta-btn cta-done';
+  btn.onclick = null;
+}
+
+// ── What-if slider ────────────────────────────────────────────────────────────
+const BASE_RATE = FD.savings_rate || 22;
+const BASE_NW = FD.net_worth || 79200;
+const BASE_FIRE = FD.fire_year || 2042;
+const BASE_SAVINGS = FD.monthly_savings || 1067;
+const INCOME = FD.income || 4850;
+
+function updateWhatIf(pct) {
+  pct = parseInt(pct);
+  const savings = Math.round(INCOME * pct / 100);
+  const nwDelta = Math.round((pct - BASE_RATE) * INCOME / 100 * 8); // 8 months left in year
+  const nw = BASE_NW + nwDelta;
+  const fireYear = pct >= 35 ? 2039 : pct >= 30 ? 2040 : pct >= 25 ? 2041 : pct >= 22 ? 2042 : pct >= 18 ? 2044 : 2047;
+  const fireAge = 34 + (fireYear - 2026);
+  const success = pct >= 35 ? 94 : pct >= 30 ? 88 : pct >= 25 ? 79 : pct >= 22 ? 68 : pct >= 18 ? 52 : 34;
+  const delta = nwDelta === 0 ? '—' : (nwDelta > 0 ? '+€' : '−€') + Math.abs(nwDelta).toLocaleString();
+  const deltaColor = nwDelta > 0 ? '#059669' : nwDelta < 0 ? '#dc2626' : '#475569';
+
+  document.getElementById('sliderPct').textContent = pct + '%';
+  document.getElementById('sliderSavingsAmt').textContent = '€' + savings.toLocaleString();
+  document.getElementById('wiNetWorth').textContent = '€' + nw.toLocaleString();
+  document.getElementById('wiNetWorthDelta').textContent = nwDelta === 0 ? 'current pace' : (nwDelta > 0 ? '↑ ' : '↓ ') + 'vs now';
+  document.getElementById('wiNetWorthDelta').style.color = deltaColor;
+  document.getElementById('wiFire').textContent = fireYear;
+  document.getElementById('wiFireAge').textContent = 'age ' + fireAge;
+  document.getElementById('wiSuccess').textContent = success + '%';
+  document.getElementById('wiSuccess').style.color = success >= 85 ? '#059669' : success >= 70 ? '#d97706' : '#dc2626';
+  document.getElementById('wiDelta').textContent = delta;
+  document.getElementById('wiDelta').style.color = deltaColor;
+
+  const insights = {
+    10: "⚠️ At 10%, you're below the German average. At this rate FIRE at 50 becomes very unlikely. Even small increases matter enormously early on.",
+    15: "📉 Below average savings rate for your income bracket. Consider automating an extra €200/month — you won't notice it, but the compound effect is massive.",
+    18: "💡 Getting closer to the sweet spot. An 18% rate keeps you on track for FIRE at ~47, but leaves little buffer for market downturns.",
+    22: "📌 This is your current pace. You're in solid shape — top 25% in Germany. Pushing to 25% is the single highest-leverage change available to you.",
+    25: "🚀 At 25%, your FIRE date moves to 2041 and success rate jumps to 79%. This is achievable just by capping dining at €120/month.",
+    30: "🔥 Excellent. 30% puts you in FIRE-ready territory by 2040. This likely requires either a raise or significant lifestyle changes.",
+    35: "⭐ Top 10% savings rate. FIRE at 40 becomes realistic. At this level, sequence risk matters more than savings rate — diversification strategy becomes the key lever.",
+    40: "🏆 Exceptional. Few households sustain 40%+ long-term. Verify your budget still includes meaningful quality-of-life spending — burnout is a real risk at this level."
+  };
+  const key = [10,15,18,22,25,30,35,40].reduce((prev, curr) => Math.abs(curr - pct) < Math.abs(prev - pct) ? curr : prev);
+  document.getElementById('wiInsight').textContent = insights[key];
+  document.getElementById('wiInsight').style.display = 'block';
+}
+updateWhatIf(22);
+
+// ── Export modal ──────────────────────────────────────────────────────────────
+function openExport() {
+  document.getElementById('exportModal').classList.add('open');
+}
+function closeExport() {
+  document.getElementById('exportModal').classList.remove('open');
+}
+function copyAdvisorSummary() {
+  const text = `Finance Assistant — Advisor Summary
+Marcus B. · Berlin · April 2026
+
+FINANCIAL SNAPSHOT
+Net Worth: €67,500 (↑€4,200 YTD)
+Savings Rate: 22% (Top 25% Germany)
+Monthly Surplus: €1,067
+Debt: €0
+
+GOALS
+Emergency Fund: €12,000/€15,000 (80%) — on pace
+House Deposit: €5,500/€80,000 (7%) — behind €150/month
+FIRE Target: €900k by 50 — 7.5% funded
+
+KEY RISKS
+1. Food/dining budget overrun — 3 months consecutive
+2. Savings rate declining: 26% → 22% over 4 months
+3. 100% labor income — no passive streams
+4. FIRE success rate 68% at age 50 — sequence risk
+
+TAX OPPORTUNITIES 2026
+Riester: +€480 (not actioned, Dec 31 deadline)
+Homeoffice: +€480 (in progress)
+Donations: +€270 (unclaimed)
+
+QUESTIONS FOR ADVISOR
+• ETF allocation appropriate for FIRE timeline?
+• Rürup alongside Riester?
+• Optimal Steuerklasse for part-time freelance?
+• At what NW to add advisor on retainer?`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    document.getElementById('copiedMsg').style.display = 'block';
+    setTimeout(() => document.getElementById('copiedMsg').style.display = 'none', 2500);
+  });
+}
+
 </script>
 </body>
 </html>
