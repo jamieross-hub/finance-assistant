@@ -1,5 +1,9 @@
 .taxde/
 .taxde_profile.json
 .taxde-updates/
+.finance/
 __pycache__/
 *.py[cod]
+*.egg-info/
+dist/
+build/
