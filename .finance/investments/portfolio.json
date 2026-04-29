@@ -1,0 +1,18 @@
+{
+  "holdings": [
+    {
+      "id": "demo-world-etf",
+      "symbol": "WORLD",
+      "name": "World ETF",
+      "type": "etf",
+      "units": 120.0,
+      "cost_basis": 22800.0,
+      "current_value": 24480.0,
+      "currency": "EUR",
+      "account_id": "scalable-depot-demo",
+      "last_updated": "2026-04-29T08:54:53.035029"
+    }
+  ],
+  "target_allocation": {},
+  "last_updated": "2026-04-29T08:54:53.035031"
+}

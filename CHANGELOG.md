@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.1.1 — 2026-04-29
+
+### New
+- **US bank import** — Chase, Bank of America, Wells Fargo, Mint, Monarch Money, and Capital One CSV formats now auto-detected and parsed. Handles split Debit/Credit columns (Capital One), positional no-header format (Wells Fargo), and Mint's `Transaction Type` debit/credit convention.
+- **Submodule doctor check** — `--doctor` now detects an uninitialised `locales/` submodule and prints the exact fix command.
+- **Troubleshooting docs** — README and CONTRIBUTING.md both document the submodule init step and locale contribution workflow.
+
+---
+
 ## v3.1.0 — 2026-04-29
 
 ### New

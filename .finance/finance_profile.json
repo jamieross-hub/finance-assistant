@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "version": "2.0",
+    "created": true,
+    "last_updated": "2026-04-29T08:54:52.866479",
+    "primary_currency": "EUR",
+    "locale": "de",
+    "language": "en",
+    "fiscal_year_start": "01-01",
+    "country": "DE"
+  },
+  "personal": {
+    "name": "Alex",
+    "city": null,
+    "country": null,
+    "region": null,
+    "date_of_birth": null
+  },
+  "employment": {
+    "type": null,
+    "employer_count": null,
+    "annual_gross": 58000,
+    "currency": null,
+    "side_income": null,
+    "side_income_type": null
+  },
+  "family": {
+    "status": null,
+    "partner_employed": null,
+    "partner_annual_gross": null,
+    "children": [],
+    "dependents": []
+  },
+  "housing": {
+    "type": "renter",
+    "monthly_rent_or_mortgage": null,
+    "property_value": null,
+    "mortgage_balance": null,
+    "mortgage_rate": null,
+    "mortgage_term_remaining_months": null,
+    "homeoffice_days_per_week": null,
+    "homeoffice_room_type": null,
+    "commute_km": null,
+    "commute_days_per_year": null,
+    "monthly_cost": 1100,
+    "city": "Berlin"
+  },
+  "insurance": {
+    "health_type": null,
+    "health_provider": null,
+    "health_monthly_premium": null,
+    "policies": []
+  },
+  "retirement": {
+    "target_age": null,
+    "current_retirement_savings": null,
+    "monthly_contribution": null,
+    "employer_match_pct": null,
+    "pension_entitlement": null
+  },
+  "tax_profile": {
+    "locale": null,
+    "filing_status": "single",
+    "tax_class": null,
+    "church_tax": null,
+    "extra": {}
+  },
+  "preferences": {
+    "risk_tolerance": null,
+    "budgeting_method": null,
+    "debt_strategy": null,
+    "fire_target": null
+  },
+  "filing_history": [],
+  "current_year_receipts": [],
+  "law_changes_noted": []
+}

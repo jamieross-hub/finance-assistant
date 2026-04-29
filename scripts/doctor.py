@@ -63,6 +63,21 @@ def _check_db() -> dict:
         return {"name": "Database", "status": "warn", "message": str(exc)}
 
 
+def _check_locales_submodule() -> dict:
+    import os
+    locales_dir = os.path.join(os.path.dirname(__file__), "..", "locales")
+    locales_dir = os.path.normpath(locales_dir)
+    # Submodule is uninitialised if the directory exists but is empty (no __init__.py or de/)
+    if not os.path.isdir(locales_dir):
+        return {"name": "Locales submodule", "status": "fail",
+                "message": "locales/ directory missing. Run: git submodule update --init --recursive"}
+    has_content = any(os.scandir(locales_dir))
+    if not has_content:
+        return {"name": "Locales submodule", "status": "fail",
+                "message": "locales/ is empty (submodule not initialised). Run: git submodule update --init --recursive"}
+    return {"name": "Locales submodule", "status": "ok", "message": f"Initialised ({locales_dir})"}
+
+
 def _check_locales() -> dict:
     try:
         from locale_registry import list_locales
@@ -82,6 +97,7 @@ def run_checks() -> list:
         _check_python_version(),
         _check_requirements(),
         _check_finance_dir(),
+        _check_locales_submodule(),
         _check_db(),
         _check_locales(),
     ]

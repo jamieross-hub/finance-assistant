@@ -581,6 +581,24 @@ FA:   Profile: angestellt, Berlin, homeoffice 3 days/week
 
 ---
 
+## Troubleshooting
+
+### `ModuleNotFoundError: No module named 'locales'`
+
+The locale data lives in a git submodule. If you cloned without `--recurse-submodules`, run:
+
+```bash
+git submodule update --init --recursive
+```
+
+Then re-run `python3 skill.py --doctor` to verify.
+
+### Locale not found for my country
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the locale plugin spec — adding a new country is ~7 files.
+
+---
+
 ## Running Tests
 
 ```bash

@@ -1,0 +1,33 @@
+{
+  "last_updated": "2026-04-29T08:54:53.034555",
+  "goals": [
+    {
+      "id": "demo-emergency-fund",
+      "name": "Emergency Fund",
+      "type": "emergency_fund",
+      "target_amount": 15000.0,
+      "current_amount": 12800.0,
+      "currency": "EUR",
+      "target_date": null,
+      "monthly_contribution": 200.0,
+      "linked_account_id": "ing-savings-demo",
+      "priority": "high",
+      "status": "active",
+      "created_at": "2026-04-29T08:54:53.034240"
+    },
+    {
+      "id": "demo-japan-trip",
+      "name": "Japan Trip",
+      "type": "travel",
+      "target_amount": 3000.0,
+      "current_amount": 840.0,
+      "currency": "EUR",
+      "target_date": "2026-04-01",
+      "monthly_contribution": 140.0,
+      "linked_account_id": null,
+      "priority": "medium",
+      "status": "active",
+      "created_at": "2026-04-29T08:54:53.034511"
+    }
+  ]
+}

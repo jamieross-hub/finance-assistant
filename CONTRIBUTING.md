@@ -32,6 +32,8 @@ pytest
 
 ## Adding a new locale
 
+> **Note:** Locales live in a separate git submodule (`locales/`). After cloning, run `git submodule update --init --recursive`. Locale changes require two commits: one in the submodule repo and one in the parent to update the ref.
+
 Each country lives in `locales/<code>/` — look at `locales/de/` or `locales/uk/` as reference implementations. The US stub in `locales/us/` is a good starting point if you're adding the US locale.
 
 ### The files you need

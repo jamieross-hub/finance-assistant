@@ -94,6 +94,80 @@ KNOWN_FORMATS = {
         "encoding": "latin-1",
         "decimal": ",",
     },
+    "chase": {
+        "detect": ["Transaction Date", "Post Date", "Description", "Category", "Type", "Amount", "Memo"],
+        "date": "Transaction Date",
+        "amount": "Amount",
+        "description": "Description",
+        "payee": "Description",
+        "date_format": "%m/%d/%Y",
+        "delimiter": ",",
+        "encoding": "utf-8",
+        "decimal": ".",
+        "amount_sign": "as_is",   # Chase exports negatives for debits
+    },
+    "bofa": {  # Bank of America
+        "detect": ["Date", "Description", "Amount", "Running Bal."],
+        "date": "Date",
+        "amount": "Amount",
+        "description": "Description",
+        "payee": "Description",
+        "date_format": "%m/%d/%Y",
+        "delimiter": ",",
+        "encoding": "utf-8",
+        "decimal": ".",
+        "amount_sign": "as_is",
+    },
+    "wells_fargo": {
+        "detect": [],   # Wells Fargo has no header row — positional
+        "positional": True,
+        "col_date": 0,
+        "col_amount": 1,
+        "col_description": 4,
+        "date_format": "%m/%d/%Y",
+        "delimiter": ",",
+        "encoding": "utf-8",
+        "decimal": ".",
+        "amount_sign": "as_is",
+    },
+    "mint": {  # Mint (Intuit) — many users still have Mint export CSVs
+        "detect": ["Date", "Description", "Original Description", "Amount", "Transaction Type", "Category", "Account Name", "Labels", "Notes"],
+        "date": "Date",
+        "amount": "Amount",
+        "description": "Description",
+        "payee": "Description",
+        "date_format": "%m/%d/%Y",
+        "delimiter": ",",
+        "encoding": "utf-8",
+        "decimal": ".",
+        "amount_sign": "mint",   # Mint uses "debit"/"credit" in Transaction Type
+        "type_col": "Transaction Type",
+    },
+    "monarch": {  # Monarch Money
+        "detect": ["Date", "Merchant", "Category", "Account", "Original Statement", "Notes", "Amount", "Tags"],
+        "date": "Date",
+        "amount": "Amount",
+        "description": "Original Statement",
+        "payee": "Merchant",
+        "date_format": "%Y-%m-%d",
+        "delimiter": ",",
+        "encoding": "utf-8",
+        "decimal": ".",
+        "amount_sign": "monarch",  # Monarch: negative = expense, positive = income
+    },
+    "capital_one": {
+        "detect": ["Transaction Date", "Posted Date", "Card No.", "Description", "Category", "Debit", "Credit"],
+        "date": "Transaction Date",
+        "amount_debit": "Debit",
+        "amount_credit": "Credit",
+        "description": "Description",
+        "payee": "Description",
+        "date_format": "%Y-%m-%d",
+        "delimiter": ",",
+        "encoding": "utf-8",
+        "decimal": ".",
+        "amount_sign": "split_cols",  # separate Debit/Credit columns
+    },
 }
 
 
@@ -113,8 +187,25 @@ def detect_bank_format(file_path: str) -> Optional[str]:
             for line in lines:
                 for bank_name, fmt in KNOWN_FORMATS.items():
                     detect_cols = fmt["detect"]
+                    if not detect_cols:
+                        continue  # positional formats handled separately
                     if all(col in line for col in detect_cols):
                         return bank_name
+
+            # Check positional formats (no header row): try to parse first line
+            # as MM/DD/YYYY, float, ...
+            for bank_name, fmt in KNOWN_FORMATS.items():
+                if not fmt.get("positional"):
+                    continue
+                first_line = lines[0] if lines else ""
+                parts = first_line.split(fmt.get("delimiter", ","))
+                if len(parts) > max(fmt.get("col_date", 0), fmt.get("col_amount", 1), fmt.get("col_description", 4)):
+                    try:
+                        datetime.strptime(parts[fmt["col_date"]].strip().strip('"'), fmt["date_format"])
+                        float(parts[fmt["col_amount"]].strip().strip('"').replace(",", ""))
+                        return bank_name
+                    except (ValueError, IndexError):
+                        continue
         except (UnicodeDecodeError, IOError):
             continue
     return None
@@ -173,14 +264,45 @@ def _parse_known_format(file_path: str, fmt: dict, currency: str) -> list[dict]:
     delimiter = fmt.get("delimiter", ",")
     decimal = fmt.get("decimal", ".")
     dfmt = fmt.get("date_format", "%Y-%m-%d")
+    amount_sign = fmt.get("amount_sign", "as_is")
 
     transactions = []
 
     with open(file_path, "r", encoding=encoding, errors="replace") as f:
         content = f.read()
 
-    # Find the header row
     lines = content.split("\n")
+
+    # Positional format (e.g. Wells Fargo — no header row)
+    if fmt.get("positional"):
+        col_date = fmt["col_date"]
+        col_amount = fmt["col_amount"]
+        col_desc = fmt["col_description"]
+        reader = csv.reader(lines, delimiter=delimiter)
+        for row in reader:
+            if len(row) <= max(col_date, col_amount, col_desc):
+                continue
+            date_val = row[col_date].strip().strip('"')
+            amount_val = row[col_amount].strip().strip('"')
+            desc_val = row[col_desc].strip().strip('"') if col_desc < len(row) else ""
+            if not date_val or not amount_val:
+                continue
+            try:
+                datetime.strptime(date_val, dfmt)
+            except ValueError:
+                continue  # skip non-data rows
+            amount = _parse_amount(amount_val, decimal)
+            transactions.append({
+                "date": _parse_date(date_val, dfmt),
+                "amount": round(amount, 2),
+                "description": desc_val,
+                "payee": "",
+                "currency": currency,
+                "raw": {"_row": row},
+            })
+        return transactions
+
+    # Find the header row
     header_idx = None
     for i, line in enumerate(lines):
         if fmt["detect"][0] in line:
@@ -196,14 +318,33 @@ def _parse_known_format(file_path: str, fmt: dict, currency: str) -> list[dict]:
 
     for row in reader:
         date_val = row.get(fmt["date"], "")
-        amount_val = row.get(fmt["amount"], "")
         desc_val = row.get(fmt.get("description", ""), "")
         payee_val = row.get(fmt.get("payee", ""), "")
 
-        if not date_val or not amount_val:
+        # Resolve amount based on amount_sign mode
+        if amount_sign == "split_cols":
+            credit_val = row.get(fmt.get("amount_credit", "Credit"), "").strip()
+            debit_val = row.get(fmt.get("amount_debit", "Debit"), "").strip()
+            if credit_val:
+                amount = _parse_amount(credit_val, decimal)
+            elif debit_val:
+                amount = -abs(_parse_amount(debit_val, decimal))
+            else:
+                continue
+        else:
+            amount_val = row.get(fmt.get("amount", ""), "")
+            if not amount_val:
+                continue
+            amount = _parse_amount(amount_val, decimal)
+            if amount_sign == "mint":
+                type_val = row.get(fmt.get("type_col", "Transaction Type"), "").strip().lower()
+                if type_val == "debit":
+                    amount = -abs(amount)
+            # "as_is" and "monarch" use the value as parsed
+
+        if not date_val:
             continue
 
-        amount = _parse_amount(amount_val, decimal)
         transactions.append({
             "date": _parse_date(date_val, dfmt),
             "amount": round(amount, 2),
