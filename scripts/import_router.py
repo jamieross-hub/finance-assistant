@@ -57,6 +57,9 @@ def detect_format(file_path: str) -> str:
     return "unknown"
 
 
+MAX_IMPORT_BYTES = 50 * 1024 * 1024  # 50 MB
+
+
 def import_file(
     file_path: str,
     account_id: str,
@@ -65,6 +68,16 @@ def import_file(
     dry_run: bool = True,
 ) -> dict:
     """Import transactions from a file. Returns preview or import result."""
+    try:
+        file_size = os.path.getsize(file_path)
+        if file_size > MAX_IMPORT_BYTES:
+            return {
+                "error": f"File too large ({file_size / 1024 / 1024:.1f} MB). Maximum is 50 MB.",
+                "file": file_path,
+            }
+    except OSError as exc:
+        return {"error": f"Cannot access file: {exc}", "file": file_path}
+
     fmt = format_hint or detect_format(file_path)
 
     if fmt == "csv":

@@ -1,5 +1,37 @@
 # Changelog
 
+## v3.2.0 — 2026-04-29
+
+### Fixed — Financial Correctness
+- **Monte Carlo log-normal returns**: Was sampling arithmetic normal (could produce returns < -100%; geometric mean systematically ~0.72%/yr too optimistic). Now uses log-normal: `μ = log(1+r) - 0.5σ²`. FIRE projections are now mathematically correct.
+- **Monthly compounding**: Was applying `real_return / 12` (linear). Now uses `(1 + real_return)^(1/12) - 1` (geometric). Affects all Monte Carlo simulators.
+- **Net worth multi-currency**: Account and holding balances are now converted to `primary_currency` before summing. Previously a USD brokerage + EUR account were added as raw numbers.
+- **DE Kirchensteuer missing from output**: `total_tax_due` excluded Kirchensteuer, understating liability for ~30% of German taxpayers. Now included. `breakdown` exposes `kirchensteuer` and `kirchensteuer_rate`.
+- **UK Scottish income tax**: Scottish taxpayers got rUK rates (20%/40%/45%). Scottish Parliament rates now applied when `region=Scotland` (starter 19%, basic 20%, intermediate 21%, higher 42%, advanced 45%, top 48%). Difference: ~£1,500/yr at £50k income.
+- **Goal completion date truncated fractional months**: `int(months_to_go)` dropped fractional months. Now uses `timedelta(days=int(months_to_go * 30.44))`.
+- **Budget "unbudgeted" category**: Spending in a category with no budget limit showed `status="on_budget"`. Now correctly `status="unbudgeted"`. Added `"warn"` tier at 85% of limit.
+- **XIRR single-cashflow returned initial guess**: With 1 cashflow, Newton's method returned `xirr_pct=10.0` (the seed). Now returns `{xirr_pct: None, error: "insufficient data"}`.
+- **Past-deadline goals silently dropped**: Goals past their target date generated no alert. Now emit a `"missed_deadline"` high-priority alert.
+
+### Fixed — Security
+- **SQL injection surface**: `finance_storage.load_from_db` and `save_to_db` f-stringed table and column names into SQL with no validation. Added `_ALLOWED_TABLES` whitelist and `_validate_column()` regex guard.
+- **CSV formula injection**: Merchant/description fields starting with `=`, `+`, `-`, `@` are now prefixed with `'` to neutralize spreadsheet formula execution.
+- **No file size limit on import**: A 500 MB CSV could OOM the process. Now enforces 50 MB limit in both `import_router` and `csv_importer`.
+- **`SECURITY.md`**: Added responsible disclosure process and security model documentation.
+
+### Infra / Docs
+- **`requirements.txt`**: All dependencies now pinned with compatible upper bounds (`cryptography>=42,<45`, etc.). Numpy added as commented optional.
+- **`pyproject.toml`**: Added — project is now `pip install -e .` installable with `full` and `dev` extras.
+- **Past-deadline goal alerts**: `session_alerts` now surfaces ⏰ missed-deadline alerts.
+- **Currency cache staleness**: Corrupt `cached_at` timestamp now logs a warning instead of silently falling back.
+- **SKILL.md**: Added CLI Usage table (`--version`, `--doctor`, `--demo`, `--dashboard`). Added `delete_transaction` availability note.
+
+### Tests (+7)
+- Updated 2 stale test assertions (budget warn tier, XIRR single-cashflow)
+- Added `test_xirr_single_cashflow_returns_error`, `test_xirr_same_date_cashflows_returns_error`
+
+---
+
 ## v3.1.2 — 2026-04-29
 
 ### Fixed

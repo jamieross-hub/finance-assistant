@@ -2,18 +2,22 @@
 # Run `pip install --upgrade pip && pip install -r requirements.txt` to update
 
 # Security — encryption at rest
-cryptography>=42.0.5
+cryptography>=42.0.5,<45
 
 # PDF and document processing
-pdfplumber>=0.11.0
-pypdf>=4.2.0
-Pillow>=10.3.0
-pytesseract>=0.3.10
-pdf2image>=1.17.0
+pdfplumber>=0.10.0,<1
+pytesseract>=0.3.10,<1
+Pillow>=10.0.0,<12
 
 # Bank statement import
-requests>=2.31.0
+requests>=2.31.0,<3
 
 # Bank statement formats (optional)
-# mt940>=4.2.0
-# ofxparse>=0.21
+ofxparse>=0.21,<1
+mt-940>=4.2.0,<5
+
+# CLI
+click>=8.1.0,<9
+
+# Optional but recommended: enables log-normal Monte Carlo sampling (faster, more accurate)
+# numpy>=1.26.0,<3

@@ -172,7 +172,17 @@ def _goal_alerts(today: date) -> list[dict]:
             continue
 
         days_until = (deadline - today).days
-        if days_until > 45 or days_until < 0:
+        if days_until < 0:
+            alerts.append({
+                "type": "missed_deadline",
+                "domain": "goals",
+                "priority": "high",
+                "title": f"Goal deadline passed: {goal.get('name', 'Unnamed goal')}",
+                "message": f"Your '{goal.get('name', 'goal')}' deadline was {abs(days_until)} day(s) ago. Consider updating the target date or reviewing your contribution.",
+                "action": f"Review goal: {goal.get('name', '')}",
+            })
+            continue
+        if days_until > 45:
             continue
 
         name = goal.get("name", "Goal")
@@ -449,11 +459,16 @@ def format_alerts(alerts: list[dict]) -> str:
     if not alerts:
         return ""
 
-    icons = {"critical": "[!]", "warning": "[~]", "info": "[i]"}
+    icons = {"critical": "[!]", "warning": "[~]", "info": "[i]", "missed_deadline": "⏰"}
     lines = ["**Session alerts:**"]
     for a in alerts:
-        icon = icons.get(a["urgency"], "•")
-        lines.append(f"{icon} **{a['title']}** — {a['detail']}")
+        if a.get("type") == "missed_deadline":
+            icon = "⏰"
+            detail = a.get("message", "")
+        else:
+            icon = icons.get(a["urgency"], "•")
+            detail = a.get("detail", "")
+        lines.append(f"{icon} **{a['title']}** — {detail}")
         if a.get("action"):
             lines.append(f"   → {a['action']}")
 

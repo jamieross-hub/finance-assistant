@@ -15,6 +15,28 @@ from typing import Any
 PROFILE_DIRNAME = ".finance"
 
 
+# Allowlist of tables and their allowed column names.
+# Any caller passing a table or column not in this set is rejected.
+_ALLOWED_TABLES: frozenset[str] = frozenset({
+    "accounts", "transactions", "goals", "debts", "holdings",
+    "budget_categories", "net_worth_snapshots", "insurance_policies",
+    "journal_entries", "life_events", "audit_log", "recurring_patterns",
+    "scenario_results", "session_metadata",
+})
+
+def _validate_table(table: str) -> str:
+    if table not in _ALLOWED_TABLES:
+        raise ValueError(f"Disallowed table name: {table!r}")
+    return table
+
+def _validate_column(col: str) -> str:
+    # Allow only identifier characters (letters, digits, underscore)
+    import re as _re
+    if not _re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", col):
+        raise ValueError(f"Disallowed column name: {col!r}")
+    return col
+
+
 def get_project_dir() -> Path:
     project_dir = (
         os.environ.get("FINANCE_PROJECT_DIR")
@@ -184,10 +206,12 @@ def load_from_db(table: str, filters: dict | None = None) -> list[dict]:
         from db import get_conn, is_initialized
         if not is_initialized():
             return []
+        table = _validate_table(table)
         clauses = []
         params = []
         if filters:
             for col, val in filters.items():
+                _validate_column(col)
                 clauses.append(f"{col} = ?")
                 params.append(val)
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
@@ -206,7 +230,11 @@ def save_to_db(table: str, data: dict, pk_col: str = "id") -> bool:
         from db import get_conn, is_initialized
         if not is_initialized():
             return False
+        table = _validate_table(table)
+        _validate_column(pk_col)
         cols = list(data.keys())
+        for c in cols:
+            _validate_column(c)
         placeholders = ", ".join("?" for _ in cols)
         col_names = ", ".join(cols)
         updates = ", ".join(f"{c} = excluded.{c}" for c in cols if c != pk_col)

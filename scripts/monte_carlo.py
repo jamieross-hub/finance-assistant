@@ -121,7 +121,10 @@ def _simulate_fire(inputs: dict, n: int, rng: _RNG) -> list[float]:
     annual_expenses = float(inputs.get("annual_expenses", 40000.0))
     withdrawal_rate = float(inputs.get("withdrawal_rate", 0.04))
 
-    returns = rng.normal(base_return, 0.12, n)
+    # Log-normal: arithmetic mean → geometric mean in log space
+    _sigma = 0.12
+    _mu_log = math.log(1 + base_return) - 0.5 * _sigma ** 2
+    returns = [math.exp(r) - 1 for r in rng.normal(_mu_log, _sigma, n)]
     inflations = rng.normal(base_inflation, 0.008, n)
     income_growths = rng.normal(0.02, 0.015, n)
     seq_risks = rng.random_n(n)
@@ -135,7 +138,7 @@ def _simulate_fire(inputs: dict, n: int, rng: _RNG) -> list[float]:
 
         # Real return
         real_return = (1 + annual_return) / (1 + inflation) - 1
-        monthly_return = real_return / 12
+        monthly_return = (1 + real_return) ** (1 / 12) - 1
         fire_number = annual_expenses / withdrawal_rate
 
         balance = current_savings
@@ -300,7 +303,8 @@ def _simulate_net_worth(inputs: dict, n: int, rng: _RNG) -> list[dict]:
         sim_result = {}
 
         for yr in range(1, horizon + 1):
-            port_return = rng.normal(0.07, 0.15, 1)[0]
+            _pmu = math.log(1 + 0.07) - 0.5 * 0.15 ** 2
+            port_return = math.exp(rng.normal(_pmu, 0.15, 1)[0]) - 1
             annual_savings = max(0.0, rng.normal(annual_savings_base, annual_savings_base * 0.10, 1)[0])
 
             # Portfolio portion grows
@@ -384,7 +388,7 @@ def simulate(
             histogram_values = raw
 
         assumptions = [
-            "Annual returns: avg {:.0f}% ± 12% (historical equity volatility)".format(
+            "Annual returns: log-normal, geometric mean {:.0f}% ± 12% (historical equity volatility)".format(
                 base_inputs.get("annual_return", 0.07) * 100
             ),
             "Inflation: avg {:.0f}% ± 0.8%".format(

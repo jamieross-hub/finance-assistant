@@ -33,14 +33,56 @@ def calculate_net_worth() -> dict:
     """Calculate current net worth from all sources."""
     # Bank accounts
     accounts = get_accounts()
-    cash_assets = sum(float(a.get("current_balance", 0)) for a in accounts
-                      if a.get("is_asset", True) and a.get("include_in_net_worth", True))
-    cash_liabilities = sum(abs(float(a.get("current_balance", 0))) for a in accounts
-                           if not a.get("is_asset", True) and a.get("include_in_net_worth", True))
+
+    try:
+        from profile_manager import get_profile
+        _profile = get_profile() or {}
+        _primary_currency = _profile.get("meta", {}).get("primary_currency", "EUR")
+    except Exception:
+        _primary_currency = "EUR"
+
+    try:
+        from currency import convert
+        _convert = True
+    except Exception:
+        _convert = False
+
+    cash_assets = 0.0
+    for a in accounts:
+        if a.get("is_asset", True) and a.get("include_in_net_worth", True):
+            bal = float(a.get("current_balance", 0))
+            acct_currency = a.get("currency", _primary_currency)
+            if _convert and acct_currency != _primary_currency:
+                try:
+                    bal = convert(bal, acct_currency, _primary_currency)
+                except Exception:
+                    pass  # use raw if conversion fails
+            cash_assets += bal
+
+    cash_liabilities = 0.0
+    for a in accounts:
+        if not a.get("is_asset", True) and a.get("include_in_net_worth", True):
+            bal = abs(float(a.get("current_balance", 0)))
+            acct_currency = a.get("currency", _primary_currency)
+            if _convert and acct_currency != _primary_currency:
+                try:
+                    bal = convert(bal, acct_currency, _primary_currency)
+                except Exception:
+                    pass
+            cash_liabilities += bal
 
     # Investments
     portfolio = get_portfolio()
-    investment_value = sum(float(h.get("current_value", 0)) for h in portfolio.get("holdings", []))
+    investment_value = 0.0
+    for h in portfolio.get("holdings", []):
+        val = float(h.get("current_value", 0))
+        h_currency = h.get("currency", _primary_currency)
+        if _convert and h_currency != _primary_currency:
+            try:
+                val = convert(val, h_currency, _primary_currency)
+            except Exception:
+                pass
+        investment_value += val
 
     # Debts
     debts = get_debts()
@@ -52,6 +94,7 @@ def calculate_net_worth() -> dict:
 
     return {
         "date": date.today().isoformat(),
+        "currency": _primary_currency,
         "net_worth": round(net_worth, 2),
         "total_assets": round(total_assets, 2),
         "total_liabilities": round(total_liabilities, 2),

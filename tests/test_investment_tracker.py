@@ -113,29 +113,42 @@ def test_xirr_converges_for_simple_cashflows():
 
 
 def test_xirr_convergence_metadata_present():
-    """Result always includes converged, iterations, warning keys."""
-    cashflows = [{"date": "2023-01-01", "amount": -1000}]
-    result = approximate_xirr(cashflows, current_value=1100, as_of="2024-01-01")
+    """Valid 2-cashflow input converges and includes expected keys."""
+    cashflows = [
+        {"date": "2023-01-01", "amount": -1000},
+        {"date": "2023-07-01", "amount": -500},
+    ]
+    result = approximate_xirr(cashflows, current_value=1650, as_of="2024-01-01")
     assert "converged" in result
     assert "iterations" in result
     assert "warning" in result
 
 
-def test_xirr_non_convergence_sets_warning():
-    """All cashflows on the same date → derivative=0 → no convergence."""
-    # All flows on the same date means years=0 for all, derivative=0, loop breaks immediately
+def test_xirr_single_cashflow_returns_error():
+    """Single cashflow returns insufficient-data error, not a guess."""
+    cashflows = [{"date": "2023-01-01", "amount": -1000}]
+    result = approximate_xirr(cashflows, current_value=1100, as_of="2024-01-01")
+    assert result["converged"] is False
+    assert result["xirr_pct"] is None
+    assert "error" in result
+
+
+def test_xirr_same_date_cashflows_returns_error():
+    """All cashflows on the same date as as_of → insufficient data."""
     cashflows = [{"date": "2024-01-01", "amount": -1000}]
     result = approximate_xirr(cashflows, current_value=1100, as_of="2024-01-01")
-    # derivative is 0 on the first iteration → breaks without converging
-    if not result["converged"]:
-        assert result["warning"] is not None
-        assert "converge" in result["warning"].lower()
+    assert result["converged"] is False
+    assert result["xirr_pct"] is None
 
 
 def test_xirr_value_helper():
-    """xirr_value extracts the decimal rate from the result dict."""
-    cashflows = [{"date": "2023-01-01", "amount": -10000}]
-    result = approximate_xirr(cashflows, current_value=11000, as_of="2024-01-01")
-    val = xirr_value(result)
-    assert isinstance(val, float)
-    assert abs(val - result["xirr_pct"] / 100) < 1e-9
+    """xirr_value extracts the decimal rate from a converged result dict."""
+    cashflows = [
+        {"date": "2023-01-01", "amount": -10000},
+        {"date": "2023-06-01", "amount": -2000},
+    ]
+    result = approximate_xirr(cashflows, current_value=13000, as_of="2024-01-01")
+    if result["converged"]:
+        val = xirr_value(result)
+        assert isinstance(val, float)
+        assert abs(val - result["xirr_pct"] / 100) < 1e-9

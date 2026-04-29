@@ -271,6 +271,20 @@ Route flexibly. Modes can overlap.
 | Milestone Alerts | alert me when / show my milestones / thresholds | threshold_alerts: set, list, check milestones |
 | Monte Carlo Simulator | monte carlo / simulate / probability / what are my chances / simulate my FIRE plan / what's the probability I reach my goal | runs `monte_carlo.simulate()` for the relevant scenario; returns distribution + success probability |
 
+## CLI Usage
+
+Finance Assistant can be used directly from the terminal without Claude:
+
+| Command | Description |
+|---------|-------------|
+| `python3 skill.py` | Show financial health summary (or onboarding prompt for new users) |
+| `python3 skill.py --version` | Print version string |
+| `python3 skill.py --doctor` | Run health checks on your setup (Python version, dependencies, DB, locales) |
+| `python3 skill.py --demo` | Seed illustrative sample data and open a demo dashboard at `~/.finance/dashboard_demo.html` |
+| `python3 skill.py --dashboard` | Generate interactive dashboard from your real data at `~/.finance/dashboard.html` |
+
+The `--demo` and `--dashboard` flags open an HTML file — open it in any browser. No server required.
+
 ## 7. Tool Contract
 
 Use the repo helpers instead of hand-waving.
@@ -303,6 +317,8 @@ Use the repo helpers instead of hand-waving.
 | Chart.js artifacts | `scripts/chart_builder.py` | interactive HTML charts for Cowork/Claude.ai |
 | `data_coach.get_unlock_nudge(profile)` | Returns the single highest-value unlock opportunity (data to add → insights unlocked). Surface after every profile update and at session end when no alerts exist. Suppress if more than 60% of insights are already available. |
 | `session_alerts.get_session_alerts(profile)` | Returns budget/goal/tax deadline alerts. Always call at session start; surface before any other output if alerts exist. |
+
+> **Note:** There is currently no `delete_transaction` command. To correct an import mistake, use `account_manager.delete_account()` to remove the account and re-import. Per-transaction deletion will be added in a future release.
 
 ## Visualizations
 

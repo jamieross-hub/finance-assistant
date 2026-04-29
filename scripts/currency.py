@@ -80,11 +80,15 @@ def get_exchange_rate(
     if rates and from_currency in rates and to_currency in rates:
         if cached_at:
             try:
-                age_hours = (datetime.now() - datetime.fromisoformat(cached_at)).total_seconds() / 3600
+                cached_at_dt = datetime.fromisoformat(cached_at)
+                age_hours = (datetime.now() - cached_at_dt).total_seconds() / 3600
                 if age_hours <= 24:
                     return round(rates[to_currency] / rates[from_currency], 6), "cached"
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as exc:
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Exchange rate cache has corrupt timestamp %r: %s. Using fallback rates.", cached_at, exc
+                )
         else:
             return round(rates[to_currency] / rates[from_currency], 6), "cached"
     # fall through to fallback if stale or no cached_at

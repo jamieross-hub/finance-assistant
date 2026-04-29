@@ -226,6 +226,16 @@ def _parse_amount(value: str, decimal: str = ",") -> float:
         return 0.0
 
 
+def _sanitize_cell(value: str) -> str:
+    """Strip CSV formula injection prefixes (=, +, -, @, tab, newline at start)."""
+    if not value:
+        return value
+    stripped = value.strip()
+    if stripped and stripped[0] in ("=", "+", "-", "@", "\t", "\r", "\n"):
+        return "'" + stripped  # prefix with apostrophe to neutralize
+    return stripped
+
+
 def _parse_date(value: str, fmt: str = "%d.%m.%Y") -> str:
     """Parse date string to ISO format."""
     value = value.strip().strip('"')
@@ -243,6 +253,9 @@ def _parse_date(value: str, fmt: str = "%d.%m.%Y") -> str:
     return value[:10]  # Best effort
 
 
+MAX_IMPORT_BYTES = 50 * 1024 * 1024  # 50 MB
+
+
 def parse_csv(
     file_path: str,
     bank_format: Optional[str] = None,
@@ -250,6 +263,15 @@ def parse_csv(
     date_format: Optional[str] = None,
 ) -> list[dict]:
     """Parse a bank CSV file. Returns list of raw transaction dicts."""
+    try:
+        file_size = os.path.getsize(file_path)
+        if file_size > MAX_IMPORT_BYTES:
+            raise ValueError(
+                f"File too large ({file_size / 1024 / 1024:.1f} MB). Maximum is 50 MB."
+            )
+    except OSError as exc:
+        raise ValueError(f"Cannot access file: {exc}") from exc
+
     bank_format = bank_format or detect_bank_format(file_path)
 
     if bank_format and bank_format in KNOWN_FORMATS:
@@ -295,7 +317,7 @@ def _parse_known_format(file_path: str, fmt: dict, currency: str) -> list[dict]:
             transactions.append({
                 "date": _parse_date(date_val, dfmt),
                 "amount": round(amount, 2),
-                "description": desc_val,
+                "description": _sanitize_cell(desc_val),
                 "payee": "",
                 "currency": currency,
                 "raw": {"_row": row},
@@ -348,8 +370,8 @@ def _parse_known_format(file_path: str, fmt: dict, currency: str) -> list[dict]:
         transactions.append({
             "date": _parse_date(date_val, dfmt),
             "amount": round(amount, 2),
-            "description": (desc_val or "").strip(),
-            "payee": (payee_val or "").strip(),
+            "description": _sanitize_cell((desc_val or "").strip()),
+            "payee": _sanitize_cell((payee_val or "").strip()),
             "currency": currency,
             "raw": dict(row),
         })
@@ -410,8 +432,8 @@ def _parse_generic(file_path: str, currency: str, date_format: Optional[str] = N
         transactions.append({
             "date": _parse_date(date_val, dfmt),
             "amount": round(amount, 2),
-            "description": desc,
-            "payee": payee,
+            "description": _sanitize_cell(desc),
+            "payee": _sanitize_cell(payee),
             "currency": currency,
         })
 

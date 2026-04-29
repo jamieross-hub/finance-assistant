@@ -112,7 +112,13 @@ def approximate_xirr(
     if not cashflows:
         return {"xirr_pct": 0, "error": "No cashflows provided"}
 
+    if len(cashflows) < 2:
+        return {"xirr_pct": None, "converged": False, "error": "insufficient data — need at least 2 cashflows"}
+
     as_of_date = date.fromisoformat(as_of) if as_of else date.today()
+
+    if all(cf.get("date") == (as_of or date.today().isoformat()) for cf in cashflows):
+        return {"xirr_pct": None, "converged": False, "error": "insufficient data — all cashflows on same date"}
 
     # Add current portfolio value as final cashflow
     all_flows = []

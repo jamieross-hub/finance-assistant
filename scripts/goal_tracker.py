@@ -117,11 +117,9 @@ def project_goal_completion(goal_id: str, monthly_contribution: Optional[float] 
     months_to_go = remaining / monthly
     completion_date = None
     today = date.today()
+    from datetime import timedelta
     try:
-        month = today.month + int(months_to_go)
-        year = today.year + (month - 1) // 12
-        month = ((month - 1) % 12) + 1
-        completion_date = date(year, month, min(today.day, 28)).isoformat()
+        completion_date = (today + timedelta(days=int(months_to_go * 30.44))).isoformat()
     except (ValueError, OverflowError):
         pass
 

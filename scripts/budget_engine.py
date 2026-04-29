@@ -179,11 +179,10 @@ def get_variance(month: str) -> list[dict]:
                     "limit": r["limit_amount"],
                     "actual": r["actual_amount"],
                     "variance": round(r["limit_amount"] - r["actual_amount"], 2),
-                    "pct_used": round(
-                        (r["actual_amount"] / r["limit_amount"] * 100)
-                        if r["limit_amount"] > 0
-                        else 0,
-                        1,
+                    "pct_used": round(r["actual_amount"] / r["limit_amount"] * 100, 1) if r["limit_amount"] > 0 else (None if r["actual_amount"] > 0 else 0),
+                    "status": "unbudgeted" if r["limit_amount"] == 0 and r["actual_amount"] > 0 else (
+                        "over" if r["actual_amount"] > r["limit_amount"] > 0 else
+                        ("warn" if r["actual_amount"] > r["limit_amount"] * 0.85 > 0 else "under")
                     ),
                 }
                 for r in rows
@@ -244,12 +243,21 @@ def get_budget_variance(year: int, month: Optional[int] = None) -> dict:
         actual_data = actuals.get(cat, {})
         spent = float(actual_data.get("spent", 0)) if isinstance(actual_data, dict) else float(actual_data)
         diff = planned - spent
+        if planned == 0 and spent > 0:
+            status = "unbudgeted"
+            pct_used = None
+        elif planned > 0:
+            pct_used = round(spent / planned * 100, 1)
+            status = "over" if spent > planned else ("warn" if spent > planned * 0.85 else "under")
+        else:
+            pct_used = 0
+            status = "on_budget"
         variance[cat] = {
             "planned": round(planned, 2),
             "actual": round(spent, 2),
             "variance": round(diff, 2),
-            "pct_used": round((spent / planned * 100) if planned > 0 else 0, 1),
-            "status": "under" if diff > 0 else ("over" if diff < 0 else "on_budget"),
+            "pct_used": pct_used,
+            "status": status,
         }
 
     total_planned = sum(float(limits.get(c, 0)) for c in limits)
