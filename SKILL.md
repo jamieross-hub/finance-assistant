@@ -164,7 +164,7 @@ State the privacy line once, briefly:
 ### Help and discovery
 
 - `restart setup` / `redo onboarding` / `start over` → call `onboarding.reset_onboarding()` then present step 1
-- `what can you do` / `help` → list all 11 modes with one-line descriptions
+- `what can you do` / `help` → list all 18 modes with one-line descriptions
 - `show my finance profile` → full profile display
 - `financial health` / `dashboard` → 7-domain health score with recommendations
 - `what's new` / `what should I focus on` → session alerts + top insight
@@ -252,7 +252,7 @@ Route flexibly. Modes can overlap.
 
 | Mode | Trigger | Required outcome |
 |------|---------|------------------|
-| Onboarding Wizard | new user / first run / setup / restart setup / redo onboarding | Run 7-step guided wizard via `onboarding.get_step_prompt()` + `complete_step()` |
+| Onboarding Wizard | new user / first run / setup / restart setup / redo onboarding | Run 9-step guided wizard via `onboarding.get_step_prompt()` + `complete_step()` |
 | Budget Manager | budget question, spending review | Budget vs actuals, category breakdown, alerts |
 | Transaction Logger | purchase, payment, income event | Classify, store, update totals + budget impact |
 | Savings Planner | emergency fund, goals, saving for X | Goal analysis, timeline projection, contribution suggestion |
@@ -301,6 +301,8 @@ Use the repo helpers instead of hand-waving.
 | month comparison | `scripts/comparison_engine.py` | month-over-month spending delta |
 | ASCII visualizations | `scripts/viz.py` | embed charts in responses |
 | Chart.js artifacts | `scripts/chart_builder.py` | interactive HTML charts for Cowork/Claude.ai |
+| `data_coach.get_unlock_nudge(profile)` | Returns the single highest-value unlock opportunity (data to add → insights unlocked). Surface after every profile update and at session end when no alerts exist. Suppress if more than 60% of insights are already available. |
+| `session_alerts.get_session_alerts(profile)` | Returns budget/goal/tax deadline alerts. Always call at session start; surface before any other output if alerts exist. |
 
 ## Visualizations
 
@@ -370,6 +372,8 @@ For what-if comparisons, always show:
 - What would change the answer
 
 ### Tax Module
+
+> **Note:** The US locale covers **federal income tax only** — state and local taxes (SALT), AMT, and QBI deductions are not modeled. For state tax questions, refer the user to their state's revenue department or a CPA.
 
 Delegate to locale plugin. For German locale:
 - Load `locales/de/` modules

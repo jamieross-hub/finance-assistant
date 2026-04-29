@@ -17,6 +17,7 @@ from onboarding import (
     get_resume_message, get_completion_message, get_onboarding_state,
 )
 
+__version__ = "3.1.2"
 
 _timeline_ctx: dict = {}
 
@@ -35,8 +36,9 @@ def _setup_db() -> None:
             migrate_all(finance_dir)
         else:
             init_db()  # ensure schema is current (no-op if up to date)
-    except Exception:
-        pass  # DB bootstrap must never crash the skill
+    except Exception as exc:
+        import sys
+        print(f"[Finance Assistant] Warning: DB bootstrap failed: {exc}", file=sys.stderr)
 
     # Load timeline context if there is enough history
     try:
@@ -127,7 +129,7 @@ def main() -> str:
 
 if __name__ == "__main__":
     if "--version" in sys.argv:
-        print("finance-assistant 3.1.0")
+        print("finance-assistant 3.1.2")
         sys.exit(0)
 
     if "--doctor" in sys.argv:

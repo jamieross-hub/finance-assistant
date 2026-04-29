@@ -135,3 +135,42 @@ def test_format_nudge_contains_unlock_names():
     result = format_nudge(nudge)
     # At least the first unlock name should appear
     assert nudge["unlocks"][0] in result or nudge["unlocks"][0].lower() in result.lower()
+
+
+# ── _INSIGHTS catalog correctness ─────────────────────────────────────────────
+
+def test_fire_timeline_requires_fire_target_not_age():
+    """fire_timeline insight requires preferences.fire_target, not the old fire_target_age."""
+    from data_coach import _INSIGHTS
+    fire = next(i for i in _INSIGHTS if i["id"] == "fire_timeline")
+    assert "preferences.fire_target" in fire["requires"]
+    assert "preferences.fire_target_age" not in fire["requires"]
+
+
+def test_emergency_fund_uses_transactions_not_phantom_keys():
+    """emergency_fund_adequacy must not require phantom profile keys."""
+    from data_coach import _INSIGHTS
+    ef = next(i for i in _INSIGHTS if i["id"] == "emergency_fund_adequacy")
+    assert "savings_balance" not in ef["requires"]
+    assert "monthly_expenses" not in ef["requires"]
+
+
+def test_tax_optimization_not_de_only():
+    """tax_optimization must not require tax_class (German concept)."""
+    from data_coach import _INSIGHTS
+    tx = next(i for i in _INSIGHTS if i["id"] == "tax_optimization")
+    assert "tax_profile.tax_class" not in tx["requires"]
+
+
+def test_insurance_gap_requires_gross_not_employment_dict():
+    """insurance_gap must require employment.annual_gross, not always-truthy employment dict."""
+    from data_coach import _INSIGHTS
+    ins = next(i for i in _INSIGHTS if i["id"] == "insurance_gap")
+    assert "employment" not in ins["requires"]
+    assert "employment.annual_gross" in ins["requires"]
+
+
+def test_locked_insights_empty_profile():
+    """All insights should be locked for a completely empty profile."""
+    available = get_available_insights({})
+    assert available == []

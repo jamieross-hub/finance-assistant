@@ -23,9 +23,9 @@ _INSIGHTS = [
     {
         "id": "tax_optimization",
         "name": "Tax optimization opportunities",
-        "requires": ["employment.annual_gross", "tax_profile.tax_class"],
-        "unlocked_by": "your Steuerklasse",
-        "teaser": "Exactly how much you're leaving on the table in unclaimed deductions, and the 3 most valuable ones for your situation.",
+        "requires": ["employment.annual_gross", "meta.locale"],
+        "unlocked_by": "your locale/country setting",
+        "teaser": "The deductions and optimizations most likely to apply to your situation — and how much you could save by claiming them.",
         "domain": "tax",
     },
     {
@@ -39,7 +39,7 @@ _INSIGHTS = [
     {
         "id": "fire_timeline",
         "name": "FIRE timeline",
-        "requires": ["employment.annual_gross", "investments", "preferences.fire_target_age"],
+        "requires": ["employment.annual_gross", "investments", "preferences.fire_target"],
         "unlocked_by": "your target retirement age",
         "teaser": "Your projected FIRE year and probability — including the exact monthly savings needed to hit your target age.",
         "domain": "investments",
@@ -55,8 +55,8 @@ _INSIGHTS = [
     {
         "id": "emergency_fund_adequacy",
         "name": "Emergency fund check",
-        "requires": ["savings_balance", "monthly_expenses"],
-        "unlocked_by": "your savings balance",
+        "requires": ["transactions:1mo"],
+        "unlocked_by": "one month of transactions",
         "teaser": "How many months of expenses you can cover and whether you're in the danger zone, the safe zone, or over-saving on cash.",
         "domain": "cashflow",
     },
@@ -111,7 +111,7 @@ _INSIGHTS = [
     {
         "id": "insurance_gap",
         "name": "Insurance coverage gaps",
-        "requires": ["employment", "family", "insurance"],
+        "requires": ["employment.annual_gross", "family", "insurance"],
         "unlocked_by": "your insurance details",
         "teaser": "The specific coverage gaps in your current setup and which ones expose you to meaningful financial risk.",
         "domain": "insurance",
@@ -119,9 +119,9 @@ _INSIGHTS = [
     {
         "id": "tax_refund_estimate",
         "name": "Tax refund estimate",
-        "requires": ["employment.annual_gross", "tax_profile.tax_class", "meta.locale"],
-        "unlocked_by": "your tax class",
-        "teaser": "Your estimated tax refund for this year and the 3 deductions most people in your situation miss.",
+        "requires": ["employment.annual_gross", "meta.locale"],
+        "unlocked_by": "your country setting",
+        "teaser": "Your estimated tax refund or liability for this year, and the most common deductions people in your situation miss.",
         "domain": "tax",
     },
 ]
@@ -388,9 +388,9 @@ _FIELD_LABELS = {
     "employment.annual_gross": "your gross annual income",
     "employment": "your employment details",
     "tax_profile.tax_class": "your Steuerklasse (tax class)",
-    "meta.locale": "your country/region",
+    "meta.locale": "your country/locale",
     "housing.monthly_cost": "your monthly housing cost",
-    "preferences.fire_target_age": "your target retirement age",
+    "preferences.fire_target": "your target retirement savings amount",
     "investments": "at least one investment or holding",
     "budget": "a monthly budget",
     "savings_balance": "your current savings balance",
@@ -410,7 +410,7 @@ _FIELD_HOW = {
     "employment.annual_gross": "Say 'my salary is €X/year' or update your employment details.",
     "tax_profile.tax_class": "Say 'my Steuerklasse is X' (1–6) to set your tax class.",
     "housing.monthly_cost": "Say 'my rent is €X/month' or 'my mortgage is €X/month'.",
-    "preferences.fire_target_age": "Say 'I want to retire at 45' (or any age).",
+    "preferences.fire_target": "Say 'I want to retire with €X' or 'my FIRE number is €X'.",
     "investments": "Say 'I have €X in ETFs' or 'add holding [name] €X'.",
     "budget": "Say 'set up a budget' and I'll walk you through it.",
     "savings_balance": "Say 'my savings account has €X'.",
@@ -421,8 +421,7 @@ _FIELD_HOW = {
     "goals:house": "Say 'I want to buy a house' to add a home purchase goal.",
     "debts:2": "Say 'add debt [name] €X at X%' to add another debt.",
     "holdings:2": "Say 'add holding [name] €X' to add another investment.",
-    "tax_profile.tax_class": "Say 'my Steuerklasse is X' (1–6).",
-    "meta.locale": "Say 'I'm in Germany' or 'set country to DE'.",
+    "meta.locale": "Say 'I'm in Germany' or 'set country to US' to set your locale.",
 }
 
 

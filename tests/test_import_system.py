@@ -152,3 +152,101 @@ def test_normalize_transactions():
 def test_is_tax_relevant():
     assert _is_tax_relevant("education") is True
     assert _is_tax_relevant("entertainment") is False
+
+
+# ── US bank format detection ──────────────────────────────────────────────────
+
+def test_detect_chase():
+    csv_content = (
+        "Transaction Date,Post Date,Description,Category,Type,Amount,Memo\n"
+        "01/15/2024,01/17/2024,STARBUCKS,Food & Drink,Sale,-42.50,\n"
+    )
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+        f.write(csv_content)
+    try:
+        fmt = detect_bank_format(f.name)
+        assert fmt == "chase"
+        txns = parse_csv(f.name)
+        assert len(txns) == 1
+        assert txns[0]["amount"] == -42.50
+    finally:
+        os.unlink(f.name)
+
+
+def test_detect_bofa():
+    csv_content = (
+        "Date,Description,Amount,Running Bal.\n"
+        "01/15/2024,Starbucks,-5.75,1234.50\n"
+    )
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+        f.write(csv_content)
+    try:
+        fmt = detect_bank_format(f.name)
+        assert fmt == "bofa"
+    finally:
+        os.unlink(f.name)
+
+
+def test_detect_mint():
+    csv_content = (
+        "Date,Description,Original Description,Amount,Transaction Type,Category,Account Name,Labels,Notes\n"
+        "01/15/2024,Amazon,AMAZON.COM,42.50,debit,Shopping,Checking,,\n"
+    )
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+        f.write(csv_content)
+    try:
+        fmt = detect_bank_format(f.name)
+        assert fmt == "mint"
+        txns = parse_csv(f.name)
+        assert len(txns) == 1
+        # Mint debit rows are negated
+        assert txns[0]["amount"] < 0
+    finally:
+        os.unlink(f.name)
+
+
+def test_detect_monarch():
+    csv_content = (
+        "Date,Merchant,Category,Account,Original Statement,Notes,Amount,Tags\n"
+        "2024-01-15,Whole Foods,Groceries,Checking,WHOLEFDS,,-38.20,\n"
+    )
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+        f.write(csv_content)
+    try:
+        fmt = detect_bank_format(f.name)
+        assert fmt == "monarch"
+    finally:
+        os.unlink(f.name)
+
+
+def test_detect_capital_one():
+    csv_content = (
+        "Transaction Date,Posted Date,Card No.,Description,Category,Debit,Credit\n"
+        "2024-01-15,2024-01-16,1234,Coffee Shop,Food & Drink,5.50,\n"
+        "2024-01-20,2024-01-21,1234,Refund,Merchandise,,25.00\n"
+    )
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+        f.write(csv_content)
+    try:
+        fmt = detect_bank_format(f.name)
+        assert fmt == "capital_one"
+        txns = parse_csv(f.name)
+        assert len(txns) == 2
+        # Debit column → negative amount
+        assert txns[0]["amount"] == -5.50
+        # Credit column → positive amount
+        assert txns[1]["amount"] == 25.00
+    finally:
+        os.unlink(f.name)
+
+
+def test_detect_wells_fargo():
+    # Wells Fargo has no header row — positional columns
+    csv_content = '"01/15/2024","-42.50","*","","Coffee Shop"\n'
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, encoding="utf-8") as f:
+        f.write(csv_content)
+    try:
+        fmt = detect_bank_format(f.name)
+        assert fmt == "wells_fargo"
+    finally:
+        os.unlink(f.name)

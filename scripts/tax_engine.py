@@ -129,6 +129,35 @@ def get_tax_rules(profile: Optional[dict] = None, year: Optional[int] = None) ->
         return {"error": f"Locale '{locale_code}' not available."}
 
 
+def get_social_contributions(
+    profile: Optional[dict] = None,
+    gross: Optional[float] = None,
+    year: Optional[int] = None,
+    filing_status: Optional[str] = None,
+) -> dict:
+    """Get social/payroll contribution estimates from the active locale plugin."""
+    profile = profile or get_profile() or {}
+    locale_code = profile.get("tax_profile", {}).get("locale") or get_locale()
+    year = year or datetime.now().year
+    if gross is None:
+        gross = float(profile.get("employment", {}).get("annual_gross") or 0)
+    if filing_status is None:
+        filing_status = profile.get("tax_profile", {}).get("filing_status", "single") or "single"
+
+    try:
+        locale = _load_locale(locale_code)
+        fn = getattr(locale, "get_social_contributions", None)
+        if fn is None:
+            return {"error": f"Locale '{locale_code}' does not implement get_social_contributions."}
+        # Try with filing_status first (US locale supports it), fall back without
+        try:
+            return fn(gross, year, filing_status=filing_status)
+        except TypeError:
+            return fn(gross, year)
+    except (ImportError, AttributeError) as e:
+        return {"error": f"Locale '{locale_code}' not available: {e}"}
+
+
 _available_locales_cache: list[dict] | None = None
 
 

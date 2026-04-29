@@ -34,7 +34,7 @@ PROFILE_SCHEMA = {
         "created": None,
         "last_updated": None,
         "primary_currency": "EUR",
-        "locale": "de",
+        "locale": None,
         "language": "en",
         "fiscal_year_start": "01-01",
     },

@@ -1,5 +1,28 @@
 # Changelog
 
+## v3.1.2 — 2026-04-29
+
+### Fixed
+- **`data_coach` — 5 permanently-locked insights**: `fire_timeline` required `preferences.fire_target_age` (non-existent key, now `fire_target`); `emergency_fund_adequacy` required phantom profile keys `savings_balance`/`monthly_expenses` (now `transactions:1mo`); `tax_optimization` and `tax_refund_estimate` required `tax_profile.tax_class` (German-only, locked for all US/UK/FR/NL/PL users, now `meta.locale`); `insurance_gap` required always-truthy `"employment"` dict (now `employment.annual_gross`).
+- **US Additional Medicare Tax ignored filing status**: `estimate_fica()` always applied the single-filer $200k threshold regardless of filing status. MFJ filers at $240k were incorrectly told they owed Additional Medicare Tax ($250k threshold applies). MFS filers at $130k were incorrectly exempt ($125k threshold applies).
+- **SE tax missing Additional Medicare**: `estimate_self_employment_tax()` did not apply the 0.9% Additional Medicare surtax on high-income self-employed filers — silently understating SE tax for earners above the threshold.
+- **`tax_engine` missing `get_social_contributions()`**: The gateway layer had no proxy for FICA/social contribution queries, leaving SKILL.md's tool contract with a dead end.
+- **Profile locale defaulted to `"de"`**: New users who skipped onboarding got German tax routing silently. Now defaults to `None` (no locale until explicitly set).
+- **`--version` hardcoded `3.1.0`**: Version string now reads `3.1.2`.
+- **`_setup_db()` swallowed all errors silently**: DB bootstrap failures now print to stderr.
+
+### Security / Ops
+- **`--doctor` now checks for `cryptography` package**: Missing package caused an obscure `ImportError` on first encrypt/decrypt; now a clear `fail` with the install command.
+- **CI adds `ruff` lint step**: Catches type and style regressions that were invisible before.
+
+### Tests
+- **14 new tests**: 6 US bank CSV format detection/parsing tests (Chase, BofA, Wells Fargo, Mint, Monarch, Capital One); 3 Additional Medicare edge case tests; 5 `data_coach` insight catalog correctness tests.
+
+### Docs
+- **SKILL.md**: Mode count corrected (18, not 11); onboarding wizard corrected (9 steps, not 7); US state tax out-of-scope note added; `data_coach` and `session_alerts` added to Tool Contract.
+
+---
+
 ## v3.1.1 — 2026-04-29
 
 ### New

@@ -23,7 +23,11 @@ def _check_requirements() -> dict:
     try:
         import importlib
         missing = []
-        for pkg in ("sqlite3",):
+        for pkg, display in [
+            ("sqlite3", "sqlite3"),
+            ("json", "json"),
+            ("pathlib", "pathlib"),
+        ]:
             try:
                 importlib.import_module(pkg)
             except ImportError:
@@ -91,11 +95,24 @@ def _check_locales() -> dict:
         return {"name": "Locales", "status": "warn", "message": str(exc)}
 
 
+def _check_cryptography() -> dict:
+    try:
+        import cryptography  # noqa: F401
+        return {"name": "Encryption (cryptography)", "status": "ok", "message": "cryptography package available"}
+    except ImportError:
+        return {
+            "name": "Encryption (cryptography)",
+            "status": "fail",
+            "message": "Missing: pip install cryptography — required for data encryption/decryption",
+        }
+
+
 def run_checks() -> list:
     """Run all health checks. Returns list of {name, status, message} dicts."""
     return [
         _check_python_version(),
         _check_requirements(),
+        _check_cryptography(),
         _check_finance_dir(),
         _check_locales_submodule(),
         _check_db(),
