@@ -126,6 +126,16 @@ def main() -> str:
 
 
 if __name__ == "__main__":
+    if "--version" in sys.argv:
+        print("finance-assistant 3.1.0")
+        sys.exit(0)
+
+    if "--doctor" in sys.argv:
+        from doctor import run_checks, format_results
+        checks = run_checks()
+        print(format_results(checks))
+        sys.exit(0 if all(c["status"] != "fail" for c in checks) else 1)
+
     if "--dashboard" in sys.argv:
         from workspace_builder import generate_html_dashboard
         import pathlib

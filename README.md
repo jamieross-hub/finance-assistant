@@ -59,6 +59,13 @@ cd finance-assistant
 pip install -r requirements.txt
 ```
 
+### Verify your install
+
+```bash
+python3 skill.py --version    # finance-assistant 3.1.0
+python3 skill.py --doctor     # runs health checks on your setup
+```
+
 ---
 
 ### Install in Claude Code
