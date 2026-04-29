@@ -136,6 +136,17 @@ if __name__ == "__main__":
         print(format_results(checks))
         sys.exit(0 if all(c["status"] != "fail" for c in checks) else 1)
 
+    if "--demo" in sys.argv:
+        from scripts.demo_data import seed_demo_data
+        from workspace_builder import generate_html_dashboard
+        _setup_db()
+        seed_demo_data()
+        path = os.path.expanduser("~/.finance/dashboard_demo.html")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        generate_html_dashboard(output_path=path)
+        print(f"Demo dashboard: {path}")
+        sys.exit(0)
+
     if "--dashboard" in sys.argv:
         from workspace_builder import generate_html_dashboard
         import pathlib
