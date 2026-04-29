@@ -168,11 +168,12 @@ def get_step_progress() -> dict:
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
 
-def get_step_prompt(step: str, locale: str = "de") -> str:
+def get_step_prompt(step: str, locale: str = None) -> str:
     """
     Return the question Claude should ask for this step.
     Warm, conversational prompts that explain what each step unlocks.
     """
+    locale = locale or "default"
     idx = STEPS.index(step) + 1 if step in STEPS else 0
     total = len(STEPS)
 
@@ -232,6 +233,7 @@ def get_step_prompt(step: str, locale: str = "de") -> str:
         )
 
     if step == "investments":
+        currency = profile.get("meta", {}).get("primary_currency", "EUR")
         return (
             f"Step {idx} of {total} — Investments\n\n"
             "Do you have any investments or a pension? — stocks, ETFs, a brokerage account, "
@@ -239,7 +241,7 @@ def get_step_prompt(step: str, locale: str = "de") -> str:
             "Even a ballpark total is useful. It lets me track your net worth properly, calculate your "
             "FIRE timeline, and flag whether your allocation makes sense for where you're headed.\n\n"
             "Say 'nothing yet' to skip — there's no wrong answer here.\n\n"
-            "(E.g. 'About €20k in ETFs at Scalable, plus a company pension' or 'Just starting out, nothing yet')"
+            f"(E.g. 'About {currency} 20k in ETFs at a brokerage account, plus a company pension' or 'Just starting out, nothing yet')"
         )
 
     if step == "accounts":
@@ -294,6 +296,18 @@ def get_step_prompt(step: str, locale: str = "de") -> str:
                 "• Czy masz mniej niż 26 lat? (ulga dla młodych — brak podatku do €85,5k)\n"
                 "• Czy rozliczasz się wspólnie z małżonkiem?\n\n"
                 "(Np. 'Tak, mam 24 lata' lub 'Nie, rozliczam się samodzielnie')"
+            )
+        if locale == "us":
+            return (
+                f"Step {idx} of {total} — Tax\n\n"
+                "A few quick questions for your federal tax estimate.\n\n"
+                "• What's your filing status? (single / married filing jointly / head of household)\n"
+                "• W-2 employee or self-employed / 1099?\n"
+                "• Did you make pre-tax 401(k) contributions this year? If so, roughly how much?\n"
+                "• Any HSA contributions?\n\n"
+                "If you have your most recent pay stub handy, Box 2 ('Federal income tax withheld') "
+                "is the number I'll use to estimate your refund.\n\n"
+                "(Skip anything you're not sure about — defaults are fine to start)"
             )
         # Generic fallback
         return (

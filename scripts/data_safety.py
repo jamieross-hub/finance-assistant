@@ -333,6 +333,19 @@ def check_permissions() -> dict:
 _GITIGNORE_ENTRY = "# Finance Assistant — personal financial data (never commit)\n.finance/\n"
 
 
+def _find_git_root(start: Path, max_levels: int = 5) -> Path:
+    """Walk upward from start to find the directory containing .git. Falls back to start."""
+    current = start
+    for _ in range(max_levels):
+        if (current / ".git").exists():
+            return current
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    return start
+
+
 def ensure_gitignore_protection(project_dir: Optional[str] = None) -> dict:
     """
     Add .finance/ to .gitignore in the project directory.
@@ -341,9 +354,10 @@ def ensure_gitignore_protection(project_dir: Optional[str] = None) -> dict:
     if project_dir:
         search_dir = Path(project_dir)
     else:
-        # Walk up from .finance/ to find repo root
+        # Walk upward from .finance/ parent to find repo root (up to 5 levels).
+        # Falls back to finance_dir.parent if no .git is found.
         finance_dir = get_finance_dir()
-        search_dir = finance_dir.parent
+        search_dir = _find_git_root(finance_dir.parent)
 
     gitignore = search_dir / ".gitignore"
 
@@ -459,8 +473,16 @@ def decrypt_file(file_path: str, passphrase: str) -> str:
     except InvalidToken:
         raise ValueError("Wrong passphrase or corrupted file.")
 
-    with open(path, "wb") as f:
-        f.write(plaintext)
+    # Atomic write: write to temp file first, then rename.
+    # This prevents a half-written file if the process is interrupted.
+    tmp = path.with_suffix(".dec.tmp")
+    try:
+        with open(tmp, "wb") as f:
+            f.write(plaintext)
+        tmp.replace(path)  # Atomic on POSIX
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
 
     return str(path)
 
@@ -520,7 +542,11 @@ def decrypt_sensitive_files(passphrase: str) -> dict:
             continue
 
     _log_access("decrypt", f"Decrypted {len(decrypted_files)} files")
-    return {"decrypted_count": len(decrypted_files), "files": decrypted_files}
+    return {
+        "decrypted_count": len(decrypted_files),
+        "files": decrypted_files,
+        "reminder": "Your files are now decrypted. Say 'encrypt my data' when you're done to secure them again.",
+    }
 
 
 # ── Sanitization ─────────────────────────────────────────────────────────────

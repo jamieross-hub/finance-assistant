@@ -9,6 +9,21 @@ description: >
   mortgage comparisons, tax deductions, insurance coverage, retirement planning, and
   life events with financial impact such as marriage, buying a house, changing jobs,
   having a baby, or going freelance.
+triggers:
+  - budget
+  - spending
+  - savings
+  - tax
+  - investments
+  - debt
+  - net worth
+  - FIRE
+  - retire
+  - salary
+  - financial health
+  - money
+  - income
+  - expenses
 ---
 
 # Finance Assistant
@@ -404,10 +419,20 @@ Users can control their data with `scripts/data_safety.py`:
 - `encrypt_sensitive_files(passphrase)` — Fernet AES-128-CBC + HMAC-SHA256 at-rest encryption
 - `decrypt_sensitive_files(passphrase)` — decrypt for use
 - `harden_permissions()` — chmod 600/700 so only your OS user can read .finance/
+  - After decryption succeeds, always tell the user: "Your files are now decrypted. Remember to say 'lock my data' or 'encrypt my data' when you're done."
 - `check_permissions()` — verify no group/world access to your data files
 - `ensure_gitignore_protection()` — add .finance/ to .gitignore (prevents accidental git commit)
 - `sanitize_for_sharing(data)` — remove all PII before sharing (for getting help)
 - `get_access_log()` — audit trail of all data access
+
+### Passphrase Handling
+
+When the user runs encrypt or decrypt commands:
+
+- **Never echo or repeat the passphrase back** in any response, even to confirm receipt.
+- Confirm encryption/decryption success without quoting the passphrase (e.g. "Done — your files are encrypted.").
+- After decrypting, always remind the user: "Your files are decrypted. Say 'encrypt my data' when done."
+- Recommend setting the `FINANCE_CRED_PASSPHRASE` environment variable as the preferred approach to avoid typing the passphrase in chat each time.
 
 ### Open Banking (GoCardless)
 

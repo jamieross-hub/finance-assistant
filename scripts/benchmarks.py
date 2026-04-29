@@ -142,25 +142,27 @@ def get_savings_rate_context(rate: float, locale: str = "default") -> Optional[d
 
     pct_str = f"{rate:.0%}"
     avg_str = f"{average:.0%}"
+    source = benchmarks["source"]
     if label == "excellent":
         message = (
             f"Your savings rate of {pct_str} is excellent — that puts you in the {percentile} "
-            f"for {locale_name} households. The average is around {avg_str}, so you're well ahead."
+            f"for {locale_name} households. The average is around {avg_str}, so you're well ahead. "
+            f"({source})"
         )
     elif label == "good":
         message = (
             f"Your savings rate of {pct_str} is solid — above average for {locale_name} households "
-            f"(average is {avg_str})."
+            f"(average is {avg_str}). ({source})"
         )
     elif label == "average":
         message = (
             f"Your savings rate of {pct_str} is roughly in line with the {locale_name} average of {avg_str}. "
-            f"Room to grow, but not a red flag."
+            f"Room to grow, but not a red flag. ({source})"
         )
     else:
         message = (
             f"Your savings rate of {pct_str} is below the {locale_name} average of {avg_str}. "
-            f"That's worth working on — even a few percent makes a big difference over time."
+            f"That's worth working on — even a few percent makes a big difference over time. ({source})"
         )
 
     return {
@@ -182,29 +184,33 @@ def get_emergency_fund_context(months_covered: float) -> Optional[dict]:
     bench = EMERGENCY_FUND_BENCHMARKS["default"]
     recommended_min = bench["recommended_min"]
 
+    ef_source = "Financial planning consensus"
     if months_covered < 1.0:
         label = "critical"
         message = (
             f"Your emergency fund covers about {months_covered:.1f} months of expenses — "
-            f"that's not much of a cushion. Building to {recommended_min:.0f} months should be a priority."
+            f"that's not much of a cushion. Building to {recommended_min:.0f} months should be a priority. "
+            f"({ef_source})"
         )
     elif months_covered < recommended_min:
         label = "low"
         message = (
             f"You have {months_covered:.1f} months of expenses covered — better than nothing, "
-            f"but below the recommended {recommended_min:.0f} months. Worth building up when you can."
+            f"but below the recommended {recommended_min:.0f} months. Worth building up when you can. "
+            f"({ef_source})"
         )
     elif months_covered < bench["p90"]:
         label = "adequate"
         message = (
             f"Your emergency fund covers {months_covered:.1f} months — that's in the recommended "
-            f"3–6 month range. You're in good shape here."
+            f"3–6 month range. You're in good shape here. ({ef_source})"
         )
     else:
         label = "strong"
         message = (
             f"You've got {months_covered:.1f} months of expenses covered — that's a strong "
-            f"emergency fund. Beyond 6 months, excess cash might work harder in investments."
+            f"emergency fund. Beyond 6 months, excess cash might work harder in investments. "
+            f"({ef_source})"
         )
 
     return {
@@ -213,7 +219,7 @@ def get_emergency_fund_context(months_covered: float) -> Optional[dict]:
         "label": label,
         "recommended_min": recommended_min,
         "message": message,
-        "source": "Financial planning consensus",
+        "source": ef_source,
     }
 
 
@@ -322,10 +328,11 @@ def get_net_worth_context(net_worth: float, age: int, locale: str = "default") -
     percentile = _net_worth_percentile(net_worth, brackets)
     locale_name = locale_key.upper() if locale_key in NET_WORTH_BY_AGE else "German"
 
+    nw_source = "ECB HFCS 2021"
     message = (
         f"Your net worth of €{net_worth:,.0f} puts you in the {percentile} for "
         f"{locale_name} households aged {bracket}. "
-        f"Median is €{brackets['p50']:,.0f}."
+        f"Median is €{brackets['p50']:,.0f}. ({nw_source})"
     )
 
     return {

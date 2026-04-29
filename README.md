@@ -1,4 +1,4 @@
-# Finance Assistant Skill
+# Finance Assistant
 
 > Personal finance copilot for **Claude Code** and **Claude Cowork** — budgets, savings goals, investments, debt optimization, taxes, insurance, net worth, bank import, scenario modeling, and Monte Carlo projections. Privacy-first: all data stays on your machine, encrypted at rest and backed by SQLite.
 
@@ -54,8 +54,8 @@ Every session start checks five domains automatically:
 ### 1. Clone the skill
 
 ```bash
-git clone --recurse-submodules https://github.com/googlarz/finance-assistant-skill.git
-cd finance-assistant-skill
+git clone --recurse-submodules https://github.com/googlarz/finance-assistant.git
+cd finance-assistant
 pip install -r requirements.txt
 ```
 
@@ -70,7 +70,7 @@ Add as a skill in `~/.claude/settings.json`:
   "skills": [
     {
       "name": "finance-assistant",
-      "path": "/path/to/finance-assistant-skill"
+      "path": "/path/to/finance-assistant"
     }
   ]
 }
@@ -91,7 +91,7 @@ Open Cowork → Projects → **New Project**. Name it something like `Finance`.
 In the project's Instructions field, add:
 
 ```
-Always load and use the Finance Assistant skill /finance-assistant-skill.
+Always load and use the Finance Assistant skill /finance-assistant.
 Start every session by running skill.py to load my profile and surface any alerts.
 ```
 
