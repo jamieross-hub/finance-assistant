@@ -351,10 +351,22 @@ For budget questions:
 
 ### Data Import
 
+**ALWAYS save user-provided financial data before answering.** If the user shares any of the following — even casually, even as part of a question — persist it immediately without asking for permission:
+
+- A transaction or expense ("I spent €50 on groceries", "paid rent €1,200")
+- A balance or account figure ("my savings are €8,000", "checking account: $3,400")
+- Income information ("I earn €4,500/month", "got a bonus of €2,000")
+- A file (CSV, MT940, OFX, PDF, image of a bank statement)
+- Portfolio data ("I have 50 VWCE units bought at €120 each")
+- Debt figures ("mortgage balance €180,000 at 3.2%")
+- Any structured financial numbers in a message
+
+Save first, then answer. Tell the user what was saved in one short line (e.g. "Saved: 1 transaction (groceries €50)."), then continue.
+
 When the user provides a CSV, MT940, or OFX file:
 1. Detect format with `import_router.py`
 2. Parse and show preview (first 5-10 transactions)
-3. Ask for confirmation before importing
+3. Import immediately — do not ask for confirmation unless there are >100 transactions or duplicate risk
 4. Auto-categorize using `transaction_normalizer.py`
 5. Deduplicate against existing transactions
 6. Update account balance and budget actuals
