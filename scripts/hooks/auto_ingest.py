@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-UserPromptSubmit hook — auto-detect and ingest financial data from user prompts.
+UserPromptSubmit hook — detect financial data in user prompts.
 
-Runs before Claude sees the message. Parses structured data, saves it,
-then injects a summary into Claude's context via additionalContext.
+Runs before Claude sees the message. Extracts what it can from the prompt,
+then injects a structured hint into Claude's context via additionalContext.
+Claude then asks the user for any missing details before saving.
 No tmp files. No Stop hook needed.
 """
 from __future__ import annotations
@@ -135,45 +136,60 @@ def extract_category(text: str) -> str:
     m = _CATEGORY_RE.search(text)
     return m.group(1).lower() if m else "other"
 
-def extract_description(text: str) -> str:
-    # First sentence or first 60 chars
-    first = re.split(r"[.!?]", text)[0].strip()
-    return first[:60] if len(first) > 60 else first
+_MERCHANT_RE = re.compile(
+    r"\b(?:at|from|in|@)\s+([A-Z][a-zA-Z0-9&'\-\s]{1,30})",
+    re.IGNORECASE,
+)
+
+def extract_merchant(text: str) -> str | None:
+    m = _MERCHANT_RE.search(text)
+    return m.group(1).strip() if m else None
 
 
-# ── Ingestion ─────────────────────────────────────────────────────────────────
+# ── Detection (no saving — Claude gathers missing details first) ───────────────
 
-def ingest(prompt: str, types: list[str]) -> list[str]:
-    saved = []
+def detect(prompt: str, types: list[str]) -> list[str]:
+    lines = []
 
     if "transaction" in types:
-        try:
-            from transaction_logger import add_transaction
-            amount, currency = extract_amount(prompt)
-            if amount is not None:
-                category = extract_category(prompt)
-                description = extract_description(prompt)
-                # Expenses are negative
-                sign = -1 if _TRANSACTION.search(prompt).group(1).lower() in (
-                    "spent", "paid", "bought", "purchased", "charged", "cost",
-                    "fee", "expense", "bill", "invoice"
-                ) else 1
-                txn_date = extract_date(prompt)
-                add_transaction(
-                    txn_date,
-                    "expense" if sign < 0 else "income",
-                    round(sign * amount, 2),
-                    category,
-                    description,
-                )
-                saved.append(
-                    f"transaction saved: {sign * amount:+.2f} {currency} "
-                    f"({category}) on {txn_date} — \"{description}\""
-                )
-        except Exception:
-            pass
+        amount, currency = extract_amount(prompt)
+        if amount is None:
+            return lines
+        category = extract_category(prompt)
+        txn_date = extract_date(prompt)
+        merchant = extract_merchant(prompt)
+        sign_word = _TRANSACTION.search(prompt).group(1).lower()
+        sign = -1 if sign_word in (
+            "spent", "paid", "bought", "purchased", "charged", "cost",
+            "fee", "expense", "bill", "invoice"
+        ) else 1
 
-    return saved
+        known_parts = [
+            f"amount={sign * amount:+.2f} {currency}",
+            f"date={txn_date}",
+            f"category={category}",
+        ]
+        if merchant:
+            known_parts.append(f"merchant={merchant}")
+        known = ", ".join(known_parts)
+
+        missing = []
+        if not merchant:
+            missing.append("store/merchant name")
+        if category == "other":
+            missing.append("category (e.g. groceries, transport, restaurant)")
+        if abs(amount) >= 20:
+            missing.append("receipt photo (optional but useful)")
+
+        ask_for = ", ".join(missing) if missing else "confirmation to save"
+
+        lines.append(
+            f"TRANSACTION DETECTED — extracted: {known}. "
+            f"Ask the user for: {ask_for}. "
+            f"Once you have all details, call add_transaction() to save."
+        )
+
+    return lines
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -193,10 +209,10 @@ def main() -> None:
     if not types:
         return
 
-    saved = ingest(prompt, types)
+    hints = detect(prompt, types)
 
-    if saved:
-        context = "Auto-saved from your message:\n" + "\n".join(f"  • {s}" for s in saved)
+    if hints:
+        context = "Finance data detected in user message:\n" + "\n".join(f"  • {h}" for h in hints)
         out = {
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
