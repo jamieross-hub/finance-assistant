@@ -12,7 +12,7 @@ import json
 import os
 import re
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 # Add scripts dir to path
@@ -66,7 +66,8 @@ def classify(text: str) -> list[str]:
 # ── Extraction helpers ────────────────────────────────────────────────────────
 
 _AMOUNT_RE = re.compile(
-    r"(€|\$|£|PLN|EUR|USD|GBP)?\s*(\d{1,3}(?:[,\s]\d{3})*(?:\.\d{1,2})?)\s*(€|\$|£|PLN|EUR|USD|GBP)?",
+    r"(€|\$|£|PLN|EUR|USD|GBP)\s*(\d+(?:[,.]\d{1,2})?)"
+    r"|(\d+(?:[,.]\d{1,2})?)\s*(€|\$|£|PLN|EUR|USD|GBP)",
     re.IGNORECASE,
 )
 _DATE_RE = re.compile(
@@ -74,6 +75,37 @@ _DATE_RE = re.compile(
     r"\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?)\b",
     re.IGNORECASE,
 )
+_WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+def extract_date(text: str) -> str:
+    """Extract date from prompt text, falling back to today."""
+    today = date.today()
+    m = _DATE_RE.search(text)
+    if not m:
+        return today.isoformat()
+    token = m.group(1).lower()
+    if token == "today":
+        return today.isoformat()
+    if token == "yesterday":
+        return (today - timedelta(days=1)).isoformat()
+    if token in _WEEKDAYS:
+        target_wd = _WEEKDAYS.index(token)
+        days_back = (today.weekday() - target_wd) % 7
+        if days_back == 0:
+            days_back = 7  # "monday" when today is monday → last monday
+        return (today - timedelta(days=days_back)).isoformat()
+    # Numeric date e.g. 15/04 or 15.04.2025
+    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y", "%d/%m/%y",
+                "%d/%m", "%d.%m", "%d-%m"):
+        try:
+            parsed = date(*[int(x) for x in re.split(r"[./-]", token)][::-1])
+            # If no year provided, assume current year
+            if len(re.split(r"[./-]", token)) == 2:
+                parsed = parsed.replace(year=today.year)
+            return parsed.isoformat()
+        except Exception:
+            continue
+    return today.isoformat()
 _CATEGORY_RE = re.compile(
     r"\b(groceries?|food|supermarket|restaurant|cafe|coffee|transport|"
     r"uber|taxi|fuel|petrol|rent|utilities|gas|electricity|water|"
@@ -86,10 +118,14 @@ def extract_amount(text: str) -> tuple[float | None, str]:
     m = _AMOUNT_RE.search(text)
     if not m:
         return None, "EUR"
-    raw = m.group(2).replace(",", "").replace(" ", "")
-    currency_sym = m.group(1) or m.group(3) or ""
     currency_map = {"€": "EUR", "$": "USD", "£": "GBP"}
-    currency = currency_map.get(currency_sym, currency_sym.upper() or "EUR")
+    # Group 1+2: symbol then number; group 3+4: number then symbol
+    if m.group(1):
+        sym, raw = m.group(1), m.group(2)
+    else:
+        sym, raw = m.group(4), m.group(3)
+    currency = currency_map.get(sym, sym.upper() if sym else "EUR")
+    raw = raw.replace(",", ".")
     try:
         return float(raw), currency
     except ValueError:
@@ -122,8 +158,9 @@ def ingest(prompt: str, types: list[str]) -> list[str]:
                     "spent", "paid", "bought", "purchased", "charged", "cost",
                     "fee", "expense", "bill", "invoice"
                 ) else 1
+                txn_date = extract_date(prompt)
                 add_transaction(
-                    date.today().isoformat(),
+                    txn_date,
                     "expense" if sign < 0 else "income",
                     round(sign * amount, 2),
                     category,
@@ -131,7 +168,7 @@ def ingest(prompt: str, types: list[str]) -> list[str]:
                 )
                 saved.append(
                     f"transaction saved: {sign * amount:+.2f} {currency} "
-                    f"({category}) — \"{description}\""
+                    f"({category}) on {txn_date} — \"{description}\""
                 )
         except Exception:
             pass
