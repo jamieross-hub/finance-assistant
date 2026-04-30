@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c '{ts: now | todate, session: .session_id, tool: .tool_name, file: (.tool_input.file_path // .tool_response.filePath // null)}' >> ~/.finance/input-log.jsonl 2>/dev/null || true",
+            "statusMessage": "Saving finance data..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f ~/.finance/input-log.jsonl ] && COUNT=$(wc -l < ~/.finance/input-log.jsonl) && echo \"{\\\"systemMessage\\\": \\\"📥 Finance data saved — $COUNT entries logged to ~/.finance/input-log.jsonl\\\"}\" || true"
+          }
+        ]
+      }
+    ]
+  }
+}
