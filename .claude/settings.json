@@ -5,29 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.prompt' | grep -qiE '(spent|paid|earned|salary|income|balance|mortgage|debt|loan|saving|invest|portfolio|budget|transaction|receipt|statement|transfer|withdraw|deposit|€|\\$|£|PLN|[0-9]+[.,][0-9]{2})' && echo '{\"hookSpecificOutput\": {\"hookEventName\": \"UserPromptSubmit\", \"additionalContext\": \"IMPORTANT: The user has provided financial data. Save it to .finance/ immediately using the appropriate script (add_transaction, add_holding, update_profile, etc.) BEFORE answering their question. Confirm what was saved in one line.\"}}' || true"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -c '{ts: now | todate, session: .session_id, tool: .tool_name, file: (.tool_input.file_path // .tool_response.filePath // null)}' >> ~/.finance/input-log.jsonl 2>/dev/null || true",
-            "statusMessage": "Saving finance data..."
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f ~/.finance/input-log.jsonl ] && COUNT=$(wc -l < ~/.finance/input-log.jsonl) && echo \"{\\\"systemMessage\\\": \\\"📥 Finance data saved — $COUNT entries logged to ~/.finance/input-log.jsonl\\\"}\" || true"
+            "command": "python3 \"/Users/dawid/Claude Code/Dev/finance-assistant/scripts/hooks/auto_ingest.py\" 2>/dev/null || true"
           }
         ]
       }
