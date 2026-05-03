@@ -2,8 +2,6 @@
 
 > Personal finance copilot for **Claude Code** and **Claude Cowork** — budgets, savings goals, investments, debt optimization, taxes, insurance, net worth, bank import, scenario modeling, and Monte Carlo projections. Privacy-first: all data stays on your machine, encrypted at rest and backed by SQLite.
 
-![Finance Assistant Dashboard](assets/dashboard-preview.jpg)
-
 <details>
 <summary>Generate this dashboard from your own data</summary>
 
