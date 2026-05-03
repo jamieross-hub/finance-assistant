@@ -27,6 +27,7 @@ python3 skill.py --dashboard  # generate from your real data → ~/.finance/dash
 8. [Module Reference](#module-reference)
 9. [Example Conversations](#example-conversations)
 10. [Running Tests](#running-tests)
+11. [Screenshot](#screenshot)
 
 ---
 
@@ -634,3 +635,9 @@ Key test files:
 | `locales/tests/test_fr_tax.py` | French quotient familial, décote, CSG assiette réduite |
 | `locales/tests/test_validation.py` | Official authority validation runner across all 5 locales |
 | `locales/validation/*/` | 29 cases from BMF, HMRC, DGFiP, Belastingdienst, KAS |
+
+---
+
+## Screenshot
+
+![Finance Assistant Dashboard](assets/dashboard-preview.jpg)
