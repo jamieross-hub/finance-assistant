@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -29,10 +30,11 @@ def _validate_table(table: str) -> str:
         raise ValueError(f"Disallowed table name: {table!r}")
     return table
 
+_COLUMN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
 def _validate_column(col: str) -> str:
     # Allow only identifier characters (letters, digits, underscore)
-    import re as _re
-    if not _re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", col):
+    if not _COLUMN_RE.match(col):
         raise ValueError(f"Disallowed column name: {col!r}")
     return col
 
@@ -50,15 +52,22 @@ def get_finance_dir() -> Path:
     return get_project_dir() / PROFILE_DIRNAME
 
 
+_dirs_ensured: set[Path] = set()
+
+
 def ensure_finance_dir() -> Path:
     path = get_finance_dir()
-    path.mkdir(parents=True, exist_ok=True)
+    if path not in _dirs_ensured:
+        path.mkdir(parents=True, exist_ok=True)
+        _dirs_ensured.add(path)
     return path
 
 
 def ensure_subdir(*parts: str) -> Path:
     path = ensure_finance_dir().joinpath(*parts)
-    path.mkdir(parents=True, exist_ok=True)
+    if path not in _dirs_ensured:
+        path.mkdir(parents=True, exist_ok=True)
+        _dirs_ensured.add(path)
     return path
 
 

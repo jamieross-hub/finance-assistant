@@ -7,6 +7,7 @@ Transactions are stored per-account per-year in .finance/accounts/transactions/.
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -23,12 +24,18 @@ except ImportError:
     from currency import format_money
 
 
+_DB_AVAILABLE: Optional[bool] = None
+
+
 def _db_available() -> bool:
-    try:
-        from db import is_initialized
-        return is_initialized()
-    except Exception:
-        return False
+    global _DB_AVAILABLE
+    if _DB_AVAILABLE is None:
+        try:
+            from db import is_initialized
+            _DB_AVAILABLE = is_initialized()
+        except Exception:
+            _DB_AVAILABLE = False
+    return _DB_AVAILABLE
 
 
 # ── Category definitions ─────────────────────────────────────────────────────
@@ -118,13 +125,19 @@ _CATEGORY_KEYWORDS = {
 }
 
 
+# Pre-compiled per-category patterns — built once at import, not on every call
+_CATEGORY_PATTERNS: list[tuple[str, re.Pattern]] = [
+    (cat, re.compile("|".join(re.escape(kw) for kw in kws), re.IGNORECASE))
+    for cat, kws in _CATEGORY_KEYWORDS.items()
+]
+
+
 def auto_categorize(description: str, amount: float) -> tuple[str, Optional[str]]:
     """Guess category from description keywords. Returns (category, None)."""
-    desc_lower = (description or "").lower()
-    for category, keywords in _CATEGORY_KEYWORDS.items():
-        for kw in keywords:
-            if kw in desc_lower:
-                return category, None
+    desc = description or ""
+    for category, pattern in _CATEGORY_PATTERNS:
+        if pattern.search(desc):
+            return category, None
     return ("other_income" if amount > 0 else "other_expense"), None
 
 

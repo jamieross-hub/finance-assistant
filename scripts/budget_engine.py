@@ -12,22 +12,28 @@ from typing import Optional
 
 try:
     from finance_storage import get_budget_path, load_json, save_json
-    from transaction_logger import get_totals as get_transaction_totals, EXPENSE_CATEGORIES
+    from transaction_logger import get_totals as get_transaction_totals, get_transactions, EXPENSE_CATEGORIES
     from currency import format_money
 except ImportError:
     import os, sys
     sys.path.insert(0, os.path.dirname(__file__))
     from finance_storage import get_budget_path, load_json, save_json
-    from transaction_logger import get_totals as get_transaction_totals, EXPENSE_CATEGORIES
+    from transaction_logger import get_totals as get_transaction_totals, get_transactions, EXPENSE_CATEGORIES
     from currency import format_money
 
 
+_DB_AVAILABLE: Optional[bool] = None
+
+
 def _db_available() -> bool:
-    try:
-        from db import is_initialized
-        return is_initialized()
-    except Exception:
-        return False
+    global _DB_AVAILABLE
+    if _DB_AVAILABLE is None:
+        try:
+            from db import is_initialized
+            _DB_AVAILABLE = is_initialized()
+        except Exception:
+            _DB_AVAILABLE = False
+    return _DB_AVAILABLE
 
 
 BUDGET_METHODS = {
@@ -289,22 +295,35 @@ def suggest_budget_from_history(
     year = year or datetime.now().year
     current_month = datetime.now().month
 
-    all_totals: dict = {}
-    months_counted = 0
-
+    # Collect needed (year, month) pairs
+    needed: list[tuple[int, int]] = []
     for offset in range(months_back):
         m = current_month - offset
         y = year
         if m <= 0:
             m += 12
             y -= 1
-        totals = get_transaction_totals(account_id=account_id, year=y, month=m)
-        if totals:
-            months_counted += 1
-            for cat, data in totals.items():
-                if cat not in all_totals:
-                    all_totals[cat] = 0.0
-                all_totals[cat] += float(data.get("expense", 0))
+        needed.append((y, m))
+
+    # Load each distinct year's transactions once (1-2 reads vs months_back reads)
+    year_txns: dict[int, list[dict]] = {}
+    for y in {y for y, _ in needed}:
+        year_txns[y] = get_transactions(account_id=account_id, year=y)
+
+    all_totals: dict = {}
+    months_counted = 0
+
+    for y, m in needed:
+        month_str = f"{m:02d}"
+        txns = [t for t in year_txns[y] if t.get("date", "")[5:7] == month_str]
+        if not txns:
+            continue
+        months_counted += 1
+        for t in txns:
+            amt = float(t.get("amount", 0))
+            if amt < 0:  # expenses are negative
+                cat = t.get("category") or "other_expense"
+                all_totals[cat] = all_totals.get(cat, 0.0) + abs(amt)
 
     if months_counted == 0:
         return {"error": "No transaction history found for suggestion."}
