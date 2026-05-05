@@ -12,7 +12,7 @@ python3 skill.py --dashboard  # generate from your real data → ~/.finance/dash
 </details>
 
 ---
-
+ 
 ## Table of Contents
 
 1. [What It Does](#what-it-does)
